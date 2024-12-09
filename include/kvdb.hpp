@@ -1,7 +1,8 @@
-#include <fstream>
+#ifndef _kvdb_hpp_
+#define _kvdb_hpp_
+
 #include <string>
 #include <vector>
-#include <exception>
 #include "MemoryRiver.hpp"
 
 template<class VT, class Comp = std::less<VT>, int key_name_len = 64>
@@ -33,3 +34,5 @@ class KVDB {
         class KVDuplicateException;
         class DBFileNotMatchException;
 };
+
+#endif
