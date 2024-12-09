@@ -34,7 +34,7 @@ class RandomDB {
         class DBFileNotMatchException;
         class MissingFileException;
     private:
-        MemoryRiver<head, 1024> head_river;
+        MemoryRiver<head, 16> head_river;
         BlockRiver<array> content_river;
         head_index head_begin = -1;
         head_index head_end = -1;
