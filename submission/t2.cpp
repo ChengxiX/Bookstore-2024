@@ -3,11 +3,13 @@
 #include <vector>
 #include <fstream>
 #include <string>
+#include <filesystem>
 
 using std::string;
 using std::fstream;
 using std::ifstream;
 using std::ofstream;
+
 
 template<class T, int info_len = 2>
 class MemoryRiver {
@@ -18,36 +20,50 @@ private:
     int sizeofT = sizeof(T);
 public:
     MemoryRiver() = default;
+    
+    MemoryRiver(const string& file_name) {
+        this->bind(file_name);
+    }
 
-    MemoryRiver(const string& file_name) : file_name(file_name) {}
+    void bind(const string& file_name) {
+        if (file.is_open()) file.close();
+        file.open(file_name, std::ios::in | std::ios::out | std::ios::binary);
+        this->file_name = file_name;
+    }
+
+    ~MemoryRiver() {
+        close();
+    }
+
+    void close() {
+        file.close();
+    }
 
     void initialise(string FN = "") {
         if (FN != "") file_name = FN;
         file.open(file_name, std::ios::out | std::ios::binary);
         int tmp = 0;
+        file.seekp(std::ios::beg);
         for (int i = 0; i < info_len; ++i)
             file.write(reinterpret_cast<char *>(&tmp), sizeof(int));
         file.close();
+        this->bind(file_name);
     }
 
     //读出第n个int的值赋给tmp，1_base
     void get_info(int &tmp, int n) {
         if (n > info_len) return;
         /* your code here */
-        file.open(file_name, std::ios::in | std::ios::binary);
         file.seekg((n - 1) * sizeof(int));
         file.read(reinterpret_cast<char *>(&tmp), sizeof(int));
-        file.close();
     }
 
     //将tmp写入第n个int的位置，1_base
     void write_info(int tmp, int n) {
         if (n > info_len) return;
         /* your code here */
-        file.open(file_name, std::ios::in | std::ios::out | std::ios::binary);
         file.seekp((n - 1) * sizeof(int));
         file.write(reinterpret_cast<char *>(&tmp), sizeof(int));
-        file.close();
     }
 
     //在文件合适位置写入类对象t，并返回写入的位置索引index
@@ -55,30 +71,24 @@ public:
     //位置索引index可以取为对象写入的起始位置
     int write(T &t) {
         /* your code here */
-        file.open(file_name, std::ios::in | std::ios::out | std::ios::binary);
         file.seekp(0,std::ios::end);
         int index = file.tellp();
         file.write(reinterpret_cast<char *>(&t), sizeofT);
-        file.close();
         return index;
     }
 
     //用t的值更新位置索引index对应的对象，保证调用的index都是由write函数产生
     void update(T &t, const int index) {
         /* your code here */
-        file.open(file_name, std::ios::in | std::ios::out | std::ios::binary);
         file.seekp(index);
         file.write(reinterpret_cast<char *>(&t), sizeofT);
-        file.close();
     }
 
     //读出位置索引index对应的T对象的值并赋值给t，保证调用的index都是由write函数产生
     void read(T &t, const int index) {
         /* your code here */
-        file.open(file_name, std::ios::in | std::ios::binary);
         file.seekg(index);
         file.read(reinterpret_cast<char *>(&t), sizeofT);
-        file.close();
     }
 
     //删除位置索引index对应的对象(不涉及空间回收时，可忽略此函数)，保证调用的index都是由write函数产生
@@ -117,6 +127,7 @@ class KVDB {
         class DBFileNotMatchException;
 };
 
+
 template<class VT, class Comp, int key_name_len>
 class KVDB<VT, Comp, key_name_len>::DBFileNotMatchException : std::exception {};
 
@@ -128,16 +139,14 @@ class KVDB<VT, Comp, key_name_len>::KVDuplicateException : std::exception {};
 
 template<class VT, class Comp, int key_name_len>
 KVDB<VT, Comp, key_name_len>::KVDB(const std::string & db_file_name, int db_id){
-    std::ifstream file(db_file_name);
-    if (!file) {
+    if (!std::filesystem::exists(db_file_name)) {
         db_file.initialise(db_file_name);
         db_file.write_info(begin_key, 2);
         db_file.write_info(db_id, 1);
         this->db_id = db_id;
     }
     else {
-        file.close();
-        db_file = MemoryRiver<node, 2>(db_file_name);
+        db_file.bind(db_file_name);
         int id;
         db_file.get_info(id, 2);
         if (db_id != -1 && db_id != id) {
@@ -151,6 +160,7 @@ KVDB<VT, Comp, key_name_len>::KVDB(const std::string & db_file_name, int db_id){
 template<class VT, class Comp, int key_name_len>
 KVDB<VT, Comp, key_name_len>::~KVDB() {
     db_file.write_info(begin_key, 2);
+    db_file.close();
 }
 
 template<class VT, class Comp, int key_name_len>
@@ -180,7 +190,7 @@ template<class VT, class Comp, int key_name_len>
 typename KVDB<VT, Comp, key_name_len>::index KVDB<VT, Comp, key_name_len>::addKey(const std::string & key) {
     if (begin_key == -1) {
         node new_node = node{-1, -1};
-        strcpy(new_node.key, key.c_str());
+        std::strcpy(new_node.key, key.c_str());
         new_node.invalid = true;
         begin_key = db_file.write(new_node);
         return begin_key;
@@ -202,13 +212,13 @@ typename KVDB<VT, Comp, key_name_len>::index KVDB<VT, Comp, key_name_len>::addKe
     }
     if (pre == -1) {
         node new_node = node{-1, begin_key};
-        strcpy(new_node.key, key.c_str());
+        std::strcpy(new_node.key, key.c_str());
         new_node.invalid = true;
         begin_key = db_file.write(new_node);
         return begin_key;
     }
     node new_node = node{-1, idx};
-    strcpy(new_node.key, key.c_str());
+    std::strcpy(new_node.key, key.c_str());
     new_node.invalid = true;
     node pre_node = get(pre);
     pre_node.right = db_file.write(new_node);
@@ -243,7 +253,7 @@ typename KVDB<VT, Comp, key_name_len>::index KVDB<VT, Comp, key_name_len>::Inser
         }
     }
     node new_node = node{idx, -1};
-    strcpy(new_node.key, key.c_str());
+    std::strcpy(new_node.key, key.c_str());
     new_node.value = value;
     new_node.invalid = false;
     index np = db_file.write(new_node);

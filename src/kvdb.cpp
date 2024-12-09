@@ -2,6 +2,7 @@
 #include <exception>
 #include <cstring>
 #include <vector>
+#include <filesystem>
 
 template<class VT, class Comp, int key_name_len>
 class KVDB<VT, Comp, key_name_len>::DBFileNotMatchException : std::exception {};
@@ -14,16 +15,14 @@ class KVDB<VT, Comp, key_name_len>::KVDuplicateException : std::exception {};
 
 template<class VT, class Comp, int key_name_len>
 KVDB<VT, Comp, key_name_len>::KVDB(const std::string & db_file_name, int db_id){
-    std::ifstream file(db_file_name);
-    if (!file) {
+    if (!std::filesystem::exists(db_file_name)) {
         db_file.initialise(db_file_name);
         db_file.write_info(begin_key, 2);
         db_file.write_info(db_id, 1);
         this->db_id = db_id;
     }
     else {
-        file.close();
-        db_file = MemoryRiver<node, 2>(db_file_name);
+        db_file.bind(db_file_name);
         int id;
         db_file.get_info(id, 2);
         if (db_id != -1 && db_id != id) {
@@ -37,6 +36,7 @@ KVDB<VT, Comp, key_name_len>::KVDB(const std::string & db_file_name, int db_id){
 template<class VT, class Comp, int key_name_len>
 KVDB<VT, Comp, key_name_len>::~KVDB() {
     db_file.write_info(begin_key, 2);
+    db_file.close();
 }
 
 template<class VT, class Comp, int key_name_len>

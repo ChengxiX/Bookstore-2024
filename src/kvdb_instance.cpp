@@ -7,7 +7,7 @@ int main() {
     std::string op;
     int n;
     std::cin >> n;
-    KVDB<int, std::less<int>> db("db");
+    KVDB<int, std::less<int>> db("db2");
     for (int i = 0; i < n; i++) {
         std::cin >> op;
         if (op == "insert") {
