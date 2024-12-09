@@ -4,7 +4,7 @@
 #include <exception>
 #include "MemoryRiver.hpp"
 
-template<class VT, class Comp, int key_name_len = 64>
+template<class VT, class Comp = std::less<VT>, int key_name_len = 64>
 class KVDB {
     using index = int;
     struct node {
@@ -24,9 +24,9 @@ class KVDB {
         bool _reuse_ = false;
         KVDB(const std::string & db_file_name, int db_id = -1);
         ~KVDB();
-        index Insert(const std::string & key, const VT & value, const index _index = -1);
-        index Del(const std::string & key, const VT & value, const index _index = -1);
-        std::pair<index, std::vector<VT>> Find(const std::string & key, const index _index = -1);
+        index Insert(const std::string & key, const VT & value, index _index = -1);
+        index Del(const std::string & key, const VT & value, index _index = -1);
+        std::vector<VT> Find(const std::string & key, index _index = -1);
         void EnableReuse();
         void DisableReuse();
         class KeyNameException;
