@@ -245,7 +245,7 @@ RandomDB<T, Comp>::upper_bound(const T& t) {
     if (bigger == content.data + content.size) {
         return std::make_pair(h.next, 0);
     }
-    return std::make_pair(idx, content.data + content.size - bigger);
+    return std::make_pair(idx, bigger - content.data);
 }
 
 template<class T, class Comp>
@@ -261,7 +261,7 @@ std::pair<typename RandomDB<T, Comp>::head_index, int> RandomDB<T, Comp>::lower_
     if (bigger == content.data + content.size) {
         return std::make_pair(h.next, 0);
     }
-    return std::make_pair(idx, content.data + content.size - bigger);
+    return std::make_pair(idx, bigger - content.data);
 }
 
 template<class T, class Comp>
