@@ -1,7 +1,9 @@
 #include "../include/randomdb.cpp"
 #include <array>
+#include <functional>
 #include <iostream>
 #include <cstring>
+#include <utility>
 
 struct cmp {
     bool operator()(const std::array<char, 1024> &a, const std::array<char, 1024> &b) const {
@@ -82,6 +84,41 @@ int strings() {
     return 0;
 }
 
+int kv() {
+    std::string op;
+    int n;
+    std::cin >> n;
+    RandomDB<int, std::less<int>, char> db("dbkv1");
+    for (int i = 0; i < n; i++) {
+        std::cin >> op;
+        if (op == "insert") {
+            int value;
+            char v;
+            std::cin >> value >>v;
+            db.insert(std::pair<int, char>(value, v));
+        }
+        else if (op == "delete") {
+            int value;
+            std::cin >> value;
+            db.erase(value);
+        }
+        else if (op == "exist") {
+            int value;
+            std::cin >> value;
+            std::cout << db.exist(value) <<std::endl;
+        }
+        else if (op == "find") {
+            int value;
+            std::cin >> value;
+            auto res = db.find(value);
+            for (auto &i : res) {
+                std::cout << i.first << i.second << std::endl;
+            }
+        }
+    }
+    return 0;
+}
+
 int main() {
-    return strings();
+    return kv();
 }
