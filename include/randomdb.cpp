@@ -130,7 +130,7 @@ void RandomDB<T, Comp>::insert(const T& t) {
         if (!duplicate_allowed) {
             auto p = back;
             p --;
-            if (*p == t) {
+            if (!(Comp()(t, *p) || Comp()(*p, t))) { // == !(Comp()(t, *p) || Comp()(*p, t))
                 throw DuplicateException();
             }
         }
@@ -214,12 +214,12 @@ bool RandomDB<T, Comp>::erase(const T& t) {
     }
     auto p = bigger;
     p--;
-    if (*p != t) {
+    if (Comp()(t, *p) || Comp()(*p, t)) {
         return false;
     }
     std::copy(bigger, content.data + content.size, bigger - 1);
     content.size --;
-    if (bigger == content.data + content.size) {
+    if (bigger == content.data + content.size + 1) {
         h.end = content.data[content.size - 1];
         head_river.update(h, idx);
     }
