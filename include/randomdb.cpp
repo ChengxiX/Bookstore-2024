@@ -3,8 +3,11 @@
 #include <algorithm>
 #include <exception>
 
-class MissingFileException : std::exception {};
-class DBFileNotMatchException : std::exception {};
+template<class T, class Comp>
+class RandomDB<T, Comp>::MissingFileException : std::exception {};
+
+template<class T, class Comp>
+class RandomDB<T, Comp>::DBFileNotMatchException : std::exception {};
 
 template<class T, class Comp>
 RandomDB<T, Comp>::RandomDB(std::string dbname, int db_id, std::string path) : db_id(db_id) {
@@ -54,7 +57,7 @@ typename RandomDB<T, Comp>::head RandomDB<T, Comp>::get_head(head_index idx) {
 
 template<class T, class Comp>
 typename RandomDB<T, Comp>::array RandomDB<T, Comp>::get_body(arr_index idx) {
-    head tmp;
+    array tmp;
     body_river.read(tmp, idx);
     return tmp;
 }
@@ -118,40 +121,72 @@ void RandomDB<T, Comp>::insert(const T& t) {
             return;
         }
         else {
-            arr_index c = body_river.write(array{{t}, 1});
-            head_index hi = head_river.write(head{t, t, head_begin, c});
-            head_begin = hi;
+            array cont = get_body(h.body);
+            array new_arr = array{};
+            new_arr.size = array_size/2;
+            for (int i = 0; i < array_size / 2; i++) {
+                new_arr.data[i] = cont.data[i + array_size - array_size / 2];
+            }
+            new_arr.size = array_size / 2;
+            cont.size = array_size - array_size / 2;
+            h.end = cont.data[array_size - array_size / 2 - 1];
+            head new_head = head{new_arr.data[0], new_arr.data[array_size / 2 - 1], h.next};
+            if (!Comp()(t, new_head.begin)) {
+                auto back = std::upper_bound(new_arr.data, new_arr.data + new_arr.size, t, Comp());
+                std::copy_backward(back, new_arr.data + new_arr.size,
+                 new_arr.data + new_arr.size + 1);
+                new_arr.size ++;
+                *back = t;
+                if (Comp()(new_head.end, t)) {
+                    new_head.end = t;
+                }
+            }
+            else {
+                auto back = std::upper_bound(cont.data, cont.data + cont.size, t, Comp());
+                std::copy_backward(back, cont.data + cont.size,
+                 cont.data + cont.size + 1);
+                cont.size ++;
+                *back = t;
+                if (Comp()(h.end, t)) {
+                    h.end = t;
+                }
+            }
+            arr_index a = body_river.write(new_arr);
+            body_river.update(cont, h.body);
+            new_head.body = a;
+            h.next = head_river.write(new_head);
+            head_river.update(h, idx);
             return;
         }
     }
     head h = get_head(idx);
-    if (h.size < array_size) {
-        array content = get_body(h.content);
-        auto back = std::upper_bound(content, content.data + content.size, t, Comp());
+    array content = get_body(h.body);
+    if (content.size < array_size) {
+        auto back = std::upper_bound(content.data, content.data + content.size, t, Comp());
         std::copy_backward(back, content.data + content.size, 
         content.data + content.size + 1);
         *back = t;
         content.size++;
         if (Comp()(h.end, t)) {
             h.end = t;
-            head_river.update(h, head_end);
+            head_river.update(h, idx);
         }
-        body_river.update(content, h.content);
+        body_river.update(content, h.body);
         return;
     }
     else {
-        array cont = get_body(h.content);
+        array cont = get_body(h.body);
         array new_arr = array{};
         new_arr.size = array_size/2;
         for (int i = 0; i < array_size / 2; i++) {
             new_arr.data[i] = cont.data[i + array_size - array_size / 2];
         }
-        cont.size = array_size / 2;
-        h.size = array_size - array_size / 2;
+        new_arr.size = array_size / 2;
+        cont.size = array_size - array_size / 2;
         h.end = cont.data[array_size - array_size / 2 - 1];
         head new_head = head{new_arr.data[0], new_arr.data[array_size / 2 - 1], h.next};
         if (!Comp()(t, new_head.begin)) {
-            auto back = std::upper_bound(new_arr, new_arr.data + new_arr.size, t, Comp());
+            auto back = std::upper_bound(new_arr.data, new_arr.data + new_arr.size, t, Comp());
             std::copy_backward(back, new_arr.data + new_arr.size,
              new_arr.data + new_arr.size + 1);
             new_arr.size ++;
@@ -161,7 +196,7 @@ void RandomDB<T, Comp>::insert(const T& t) {
             }
         }
         else {
-            auto back = std::upper_bound(cont, cont.data + cont.size, t, Comp());
+            auto back = std::upper_bound(cont.data, cont.data + cont.size, t, Comp());
             std::copy_backward(back, cont.data + cont.size,
              cont.data + cont.size + 1);
             cont.size ++;
@@ -171,10 +206,10 @@ void RandomDB<T, Comp>::insert(const T& t) {
             }
         }
         arr_index a = body_river.write(new_arr);
-        new_head.content = a;
-        head_index hi = head_river.write(new_head);
-        h.next = hi;
+        new_head.body = a;
+        h.next = head_river.write(new_head);
         head_river.update(h, idx);
+        body_river.update(cont, h.body);
     }
 }
 
@@ -185,7 +220,7 @@ void RandomDB<T, Comp>::erase(const T& t) {
         return;
     }
     head h = get_head(idx);
-    array content = get_body(h.content);
+    array content = get_body(h.body);
     auto bigger = 
     std::upper_bound(content.data, content.data + content.size, t, Comp());
     if (bigger==content.data) {
@@ -197,7 +232,7 @@ void RandomDB<T, Comp>::erase(const T& t) {
         h.end = content.data[content.size - 1];
         head_river.update(h, idx);
     }
-    body_river.update(content, h.content);
+    body_river.update(content, h.body);
 }
 
 template<class T, class Comp>
@@ -240,7 +275,7 @@ bool RandomDB<T, Comp>::exist(const T& t) {
         return false;
     }
     head h = get_head(idx);
-    array content = get_body(h.content);
+    array content = get_body(h.body);
     return std::binary_search(content.data, content.data + content.size, t, Comp());
 }
 
