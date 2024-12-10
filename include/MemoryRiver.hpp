@@ -2,6 +2,7 @@
 #define BPT_MEMORYRIVER_HPP
 
 #include <fstream>
+#include "binable.hpp"
 
 using std::string;
 using std::fstream;
@@ -14,7 +15,7 @@ private:
     /* your code here */
     fstream file;
     string file_name;
-    int sizeofT = sizeof(T);
+    static const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);
 public:
     MemoryRiver() = default;
     
@@ -71,7 +72,12 @@ public:
         /* your code here */
         file.seekp(0,std::ios::end);
         int index = file.tellp();
-        file.write(reinterpret_cast<const char *>(&t), sizeofT);
+        if constexpr (binable<T>) {
+            char* data = t.to_bin();
+            file.write(data, sizeofT);
+        } else {
+            file.write(reinterpret_cast<const char *>(&t), sizeofT);
+        }
         return index;
     }
 
@@ -79,14 +85,26 @@ public:
     void update(const T &t, const int index) {
         /* your code here */
         file.seekp(index);
-        file.write(reinterpret_cast<const char *>(&t), sizeofT);
+        if constexpr (binable<T>) {
+            char* data = t.to_bin();
+            file.write(data, sizeofT);
+        } else {
+            file.write(reinterpret_cast<const char *>(&t), sizeofT);
+        }
     }
 
     //读出位置索引index对应的T对象的值并赋值给t，保证调用的index都是由write函数产生
     void read(T &t, const int index) {
         /* your code here */
         file.seekg(index);
-        file.read(reinterpret_cast<char *>(&t), sizeofT);
+        if constexpr (binable<T>) {
+            char *data = new char[sizeofT];
+            file.read(data, sizeofT);
+            t.from_bin(data);
+            delete []data;
+        } else {
+            file.read(reinterpret_cast<char *>(&t), sizeofT);
+        }
     }
 
     //删除位置索引index对应的对象(不涉及空间回收时，可忽略此函数)，保证调用的index都是由write函数产生

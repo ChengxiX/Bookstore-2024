@@ -280,3 +280,105 @@ void RandomDB<T, Comp>::enable_duplicate() {
     duplicate_allowed = true;
     head_river.write_info(1, 5);
 }
+
+template<class T, class Comp>
+const int RandomDB<T, Comp>::head::bin_size() {
+    if constexpr (binable<T>) {
+        return T::bin_size() * 2 + sizeof(head_index) + sizeof(arr_index);
+    }
+    else {
+        return sizeof(T) * 2 + sizeof(head_index) + sizeof(arr_index) + sizeof(int);
+    }
+}
+
+template<class T, class Comp>
+const char* RandomDB<T, Comp>::head::to_bin() {
+    if constexpr (binable<T>) {
+        char* bin = new char[bin_size()];
+        char* ptr = bin;
+        auto data = begin.to_bin();
+        std::copy(data, data + sizeofT, ptr);
+        ptr += sizeofT;
+        delete[] data;
+        char* data2 = end.to_bin();
+        std::copy(data2, data2 + sizeofT, ptr);
+        ptr += sizeofT;
+        std::copy(reinterpret_cast<char*>(&next), reinterpret_cast<char*>(&next) + sizeof(head_index), ptr);
+        ptr += sizeof(head_index);
+        std::copy(reinterpret_cast<char*>(&body), reinterpret_cast<char*>(&body) + sizeof(arr_index), ptr);
+        return bin;
+    }
+    else {
+        return reinterpret_cast<char*>(this);
+    }
+}
+
+template<class T, class Comp>
+const void RandomDB<T, Comp>::head::from_bin(char* bin) {
+    if constexpr (binable<T>) {
+        char* ptr = bin;
+        this->begin.from_bin(ptr);
+        ptr += sizeofT;
+        this->end.from_bin(ptr);
+        ptr += sizeofT;
+        std::copy(ptr, ptr + sizeof(head_index), reinterpret_cast<char*>(&next));
+        ptr += sizeof(head_index);
+        std::copy(ptr, ptr + sizeof(arr_index), reinterpret_cast<char*>(&body));
+    }
+    else {
+        std::copy(bin, bin + sizeof(head), reinterpret_cast<char*>(this));
+    }
+}
+
+template<class T, class Comp>
+const int RandomDB<T, Comp>::array::bin_size() {
+    if constexpr (binable<T>) {
+        return sizeof(int) + sizeof(bool) + T::bin_size() * array_size;
+    }
+    else {
+        return sizeof(int) + sizeof(bool) + sizeof(T) * array_size + sizeof(int);
+    }
+}
+
+template<class T, class Comp>
+const char* RandomDB<T, Comp>::array::to_bin() {
+    if constexpr (binable<T>) {
+        char* bin = new char[bin_size()];
+        char* ptr = bin;
+        std::copy(reinterpret_cast<char*>(&size), reinterpret_cast<char*>(&size) + sizeof(int), ptr);
+        ptr += sizeof(int);
+        std::copy(reinterpret_cast<char*>(&deprecated), reinterpret_cast<char*>(&deprecated) + sizeof(bool), ptr);
+        ptr += sizeof(bool);
+        for (int i = 0; i < size; i++) {
+            char* str_data = data[i].to_bin();
+            std::copy(str_data, str_data + sizeofT, ptr);
+            ptr += sizeofT;
+            delete[] str_data;
+        }
+        return bin;
+    }
+    else {
+        return reinterpret_cast<char*>(this);
+    }
+}
+
+template<class T, class Comp>
+const void RandomDB<T, Comp>::array::from_bin(char* bin) {
+    if constexpr (binable<T>) {
+        char* ptr = bin;
+        std::copy(ptr, ptr + sizeof(int), reinterpret_cast<char*>(&size));
+        ptr += sizeof(int);
+        std::copy(ptr, ptr + sizeof(bool), reinterpret_cast<char*>(&deprecated));
+        ptr += sizeof(bool);
+        for (int i = 0; i < size; i++) {
+            char* str_data = new char[sizeofT];
+            std::copy(ptr, ptr + sizeofT, str_data);
+            data[i].from_bin(str_data);
+            delete[] str_data;
+            ptr += sizeofT;
+        }
+    }
+    else {
+        std::copy(bin, bin + sizeof(array), reinterpret_cast<char*>(this));
+    }
+}

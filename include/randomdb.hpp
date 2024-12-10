@@ -3,7 +3,9 @@
 
 #include "MemoryRiver.hpp"
 #include "BlockRiver.hpp"
+#include <functional>
 #include <string>
+#include "binable.hpp"
 
 template<class T, class Comp=std::less<T>>
 class RandomDB {
@@ -16,11 +18,17 @@ class RandomDB {
             T end;
             head_index next;
             arr_index body;
+            const char* to_bin();
+            const void from_bin(char* bin); // 虚假const
+            static const int bin_size();
         };
         struct array {
             T data[array_size];
             int size;
             bool deprecated = false;
+            const char* to_bin();
+            const void from_bin(char* bin);
+            static const int bin_size();
         };
         RandomDB(std::string dbname, int db_id = 0, std::string path = "", bool duplicate_allowed = true);
         ~RandomDB();
@@ -45,6 +53,7 @@ class RandomDB {
         head get_head(head_index idx);
         array get_body(arr_index idx);
         head_index add_head(const T& t, head_index prev = -1);
+        static const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);
 };
 
 #endif
