@@ -45,7 +45,7 @@ int strings() {
     std::string op;
     int n;
     std::cin >> n;
-    RandomDB<std::array<char, 1024>, cmp> db("dbstring");
+    RandomDB<std::array<char, 1024>, cmp> db("dbstring", 0, "", false);
     for (int i = 0; i < n; i++) {
         std::cin >> op;
         if (op == "insert") {

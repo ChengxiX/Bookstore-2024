@@ -20,24 +20,26 @@ class RandomDB {
         struct array {
             T data[array_size];
             int size;
-            bool deplicated = false;
+            bool deprecated = false;
         };
-        RandomDB(std::string dbname, int db_id = 0, std::string path = "");
+        RandomDB(std::string dbname, int db_id = 0, std::string path = "", bool duplicate_allowed = true);
         ~RandomDB();
         void insert(const T& t);
-        void erase(const T& t);
+        bool erase(const T& t);
         std::pair<head_index, int> upper_bound(const T& t);
         std::pair<head_index, int> lower_bound(const T& t);
         bool exist(const T& t);
-
+        void enable_duplicate();
         class DBFileNotMatchException;
         class MissingFileException;
+        class DuplicateException;
     private:
         MemoryRiver<head, 16> head_river;
         BlockRiver<array> body_river;
         head_index head_begin = -1;
         head_index head_end = -1;
         head_index db_id;
+        bool duplicate_allowed;
     protected:
         arr_index locate(const T& t);
         head get_head(head_index idx);

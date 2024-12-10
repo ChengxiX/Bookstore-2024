@@ -10,13 +10,17 @@ template<class T, class Comp>
 class RandomDB<T, Comp>::DBFileNotMatchException : std::exception {};
 
 template<class T, class Comp>
-RandomDB<T, Comp>::RandomDB(std::string dbname, int db_id, std::string path) : db_id(db_id) {
+class RandomDB<T, Comp>::DuplicateException : std::exception {};
+
+template<class T, class Comp>
+RandomDB<T, Comp>::RandomDB(std::string dbname, int db_id, std::string path, bool duplicate_allowed) : db_id(db_id), duplicate_allowed(duplicate_allowed) {
     if (!std::filesystem::exists(path + dbname + ".head")) {
         head_river.initialise(path + dbname + ".head");
         head_river.write_info(db_id, 1);
         head_river.write_info(sizeof(T) , 2);
         head_river.write_info(head_begin, 3);
         head_river.write_info(head_end, 4);
+        head_river.write_info(duplicate_allowed, 5);
         body_river.initialise(path + dbname + ".data");
     }
     else {
@@ -33,6 +37,11 @@ RandomDB<T, Comp>::RandomDB(std::string dbname, int db_id, std::string path) : d
         int size;
         head_river.get_info(size, 2);
         if (size != sizeof(T)) {
+            throw DBFileNotMatchException();
+        }
+        int da;
+        head_river.get_info(da, 5);
+        if (da && (! duplicate_allowed)) {
             throw DBFileNotMatchException();
         }
         head_river.get_info(head_begin, 3);
@@ -118,6 +127,13 @@ void RandomDB<T, Comp>::insert(const T& t) {
     array content = get_body(h.body);
     if (content.size < array_size) {
         auto back = std::upper_bound(content.data, content.data + content.size, t, Comp());
+        if (!duplicate_allowed) {
+            auto p = back;
+            p --;
+            if (*p == t) {
+                throw DuplicateException();
+            }
+        }
         std::copy_backward(back, content.data + content.size, 
         content.data + content.size + 1);
         *back = t;
@@ -184,17 +200,22 @@ void RandomDB<T, Comp>::insert(const T& t) {
 }
 
 template<class T, class Comp>
-void RandomDB<T, Comp>::erase(const T& t) {
+bool RandomDB<T, Comp>::erase(const T& t) {
     head_index idx = locate(t);
     if (idx == -1) {
-        return;
+        return false;
     }
     head h = get_head(idx);
     array content = get_body(h.body);
     auto bigger = 
     std::upper_bound(content.data, content.data + content.size, t, Comp());
     if (bigger==content.data) {
-        return;
+        return false;
+    }
+    auto p = bigger;
+    p--;
+    if (*p != t) {
+        return false;
     }
     std::copy(bigger, content.data + content.size, bigger - 1);
     content.size --;
@@ -202,7 +223,12 @@ void RandomDB<T, Comp>::erase(const T& t) {
         h.end = content.data[content.size - 1];
         head_river.update(h, idx);
     }
+    if (p == content.data) {
+        h.begin = content.data[0];
+        head_river.update(h, idx);
+    }
     body_river.update(content, h.body);
+    return true;
 }
 
 template<class T, class Comp>
@@ -249,3 +275,8 @@ bool RandomDB<T, Comp>::exist(const T& t) {
     return std::binary_search(content.data, content.data + content.size, t, Comp());
 }
 
+template<class T, class Comp>
+void RandomDB<T, Comp>::enable_duplicate() {
+    duplicate_allowed = true;
+    head_river.write_info(1, 5);
+}
