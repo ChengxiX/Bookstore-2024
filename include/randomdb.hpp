@@ -11,7 +11,7 @@ template<class T, class Comp=std::less<T>>
 class RandomDB {
     using head_index = int;
     using arr_index = int;
-    constexpr static const int array_size = (4096 - 1 - 8) / sizeof(T);
+    constexpr static const int array_size = (4096 - sizeof(bool) - sizeof(int)) / sizeof(T);
     public:
         struct head {
             T begin;
