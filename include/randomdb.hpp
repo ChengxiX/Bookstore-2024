@@ -3,7 +3,6 @@
 
 #include "MemoryRiver.hpp"
 #include "BlockRiver.hpp"
-#include <vector>
 #include <string>
 
 template<class T, class Comp=std::less<T>>
@@ -16,7 +15,7 @@ class RandomDB {
             T begin;
             T end;
             head_index next;
-            arr_index content;
+            arr_index body;
         };
         struct array {
             T data[array_size];
@@ -27,21 +26,22 @@ class RandomDB {
         ~RandomDB();
         void insert(const T& t);
         void erase(const T& t);
-        std::vector<T> range(const T& l, const T& r);
+        std::pair<head_index, int> upper_bound(const T& t);
+        std::pair<head_index, int> lower_bound(const T& t);
         bool exist(const T& t);
 
-        class ValueDuplicateException;
         class DBFileNotMatchException;
         class MissingFileException;
     private:
         MemoryRiver<head, 16> head_river;
-        BlockRiver<array> content_river;
+        BlockRiver<array> body_river;
         head_index head_begin = -1;
         head_index head_end = -1;
         head_index db_id;
     protected:
         arr_index locate(const T& t);
-        head get(head_index idx);
+        head get_head(head_index idx);
+        array get_body(arr_index idx);
         head_index add_head(const T& t, head_index prev = -1);
 };
 
