@@ -22,45 +22,19 @@ public:
         Attachment second;
         const char* to_bin();
         const void from_bin(char* bin);
-        constexpr static const int bin_size() {
-            if constexpr (std::is_same<Attachment, Empty>::value) {
-                if constexpr (binable<T>) {
-                    return T::bin_size();
-                }
-                else {
-                    return sizeof(T);
-                }
-            }
-            else {
-                if constexpr (binable<T> && binable<Attachment>) {
-                    return T::bin_size() + Attachment::bin_size();
-                }
-                else if constexpr (binable<T> && (!binable<Attachment>)) {
-                    return T::bin_size() + sizeof(Attachment);
-                }
-                else if constexpr ((!binable<T>) && binable<Attachment>) {
-                    return sizeof(T) + Attachment::bin_size();
-                }
-                else {
-                    return sizeof(T) + sizeof(Attachment);
-                }
-            }
-        }
+        constexpr static const int bin_size();
     };
     constexpr static const int array_size = (4096 - sizeof(bool) - sizeof(int)) / T_A_pair::bin_size();
     struct Comp_A {
         bool operator()(const T_A_pair& a, const T_A_pair& b) const {
             return Comp()(a.first, b.first);
         }
-
         bool operator()(const T&a, const T& b) const {
             return Comp()(a, b);
         }
-
         bool operator()(const T& a, const T_A_pair& b) const {
             return Comp()(a, b.first);
         }
-
         bool operator()(const T_A_pair& a, const T& b) const {
             return Comp()(a.first, b);
         }
@@ -73,7 +47,7 @@ public:
         arr_index body;
         const char* to_bin();
         const void from_bin(char* bin); // 虚假const
-        static const int bin_size();
+        constexpr static const int bin_size();
     };
     struct array {
         T_A_pair data[array_size];
@@ -81,7 +55,7 @@ public:
         bool deprecated = false;
         const char* to_bin();
         const void from_bin(char* bin);
-        static const int bin_size();
+        constexpr static const int bin_size();
     };
     RandomDB(std::string dbname, int db_id = 0, std::string path = "", bool duplicate_allowed = true);
     ~RandomDB();
@@ -97,6 +71,7 @@ public:
     class DBFileNotMatchException;
     class MissingFileException;
     class DuplicateException;
+    std::vector<T_A_pair> range(head_index lh, int lp, head_index rh, int rp);
 private:
     MemoryRiver<head, 16> head_river;
     BlockRiver<array> body_river;

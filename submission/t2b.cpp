@@ -1,5 +1,340 @@
-#include "randomdb.hpp"
-#include "binable.hpp"
+#ifndef binable_hpp
+#define binable_hpp
+
+#include <concepts>
+
+template<class T>
+concept to_bin = requires(T t) {
+    { t.to_bin() } -> std::same_as<char*>;
+};
+template<class T>
+concept from_bin = requires(T t, char* s) {
+    { t.from_bin(s) } -> std::same_as<void>;
+};
+template<class T>
+concept bin_size = requires(T t) {
+    { t.bin_size() } -> std::same_as<int>;
+};
+template<class T>
+concept binable = to_bin<T> && from_bin<T> && bin_size<T>;
+
+#endif
+
+#ifndef BPT_MEMORYRIVER_HPP
+#define BPT_MEMORYRIVER_HPP
+
+#include <fstream>
+
+using std::string;
+using std::fstream;
+using std::ifstream;
+using std::ofstream;
+
+template<class T, int info_len = 2>
+class MemoryRiver {
+private:
+    /* your code here */
+    fstream file;
+    string file_name;
+    static const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);
+public:
+    MemoryRiver() = default;
+    
+    MemoryRiver(const string& file_name) {
+        this->bind(file_name);
+    }
+
+    void bind(const string& file_name) {
+        if (file.is_open()) file.close();
+        file.open(file_name, std::ios::in | std::ios::out | std::ios::binary);
+        this->file_name = file_name;
+    }
+
+    ~MemoryRiver() {
+        close();
+    }
+
+    void close() {
+        file.close();
+    }
+
+    void initialise(string FN = "") {
+        if (FN != "") file_name = FN;
+        if (file.is_open()) file.close();
+        file.open(file_name, std::ios::out | std::ios::binary);
+        int tmp = 0;
+        file.seekp(std::ios::beg);
+        for (int i = 0; i < info_len; ++i)
+            file.write(reinterpret_cast<char *>(&tmp), sizeof(int));
+        file.close();
+        this->bind(file_name);
+    }
+
+    //读出第n个int的值赋给tmp，1_base
+    void get_info(int &tmp, int n) {
+        if (n > info_len) return;
+        /* your code here */
+        file.seekg((n - 1) * sizeof(int));
+        file.read(reinterpret_cast<char *>(&tmp), sizeof(int));
+    }
+
+    //将tmp写入第n个int的位置，1_base
+    void write_info(int tmp, int n) {
+        if (n > info_len) return;
+        /* your code here */
+        file.seekp((n - 1) * sizeof(int));
+        file.write(reinterpret_cast<char *>(&tmp), sizeof(int));
+    }
+
+    //在文件合适位置写入类对象t，并返回写入的位置索引index
+    //位置索引意味着当输入正确的位置索引index，在以下三个函数中都能顺利的找到目标对象进行操作
+    //位置索引index可以取为对象写入的起始位置
+    int write(const T &t) {
+        /* your code here */
+        file.seekp(0,std::ios::end);
+        int index = file.tellp();
+        if constexpr (binable<T>) {
+            char* data = t.to_bin();
+            file.write(data, sizeofT);
+        } else {
+            file.write(reinterpret_cast<const char *>(&t), sizeofT);
+        }
+        return index;
+    }
+
+    //用t的值更新位置索引index对应的对象，保证调用的index都是由write函数产生
+    void update(const T &t, const int index) {
+        /* your code here */
+        file.seekp(index);
+        if constexpr (binable<T>) {
+            char* data = t.to_bin();
+            file.write(data, sizeofT);
+        } else {
+            file.write(reinterpret_cast<const char *>(&t), sizeofT);
+        }
+    }
+
+    //读出位置索引index对应的T对象的值并赋值给t，保证调用的index都是由write函数产生
+    void read(T &t, const int index) {
+        /* your code here */
+        file.seekg(index);
+        if constexpr (binable<T>) {
+            char *data = new char[sizeofT];
+            file.read(data, sizeofT);
+            t.from_bin(data);
+            delete []data;
+        } else {
+            file.read(reinterpret_cast<char *>(&t), sizeofT);
+        }
+    }
+
+    //删除位置索引index对应的对象(不涉及空间回收时，可忽略此函数)，保证调用的index都是由write函数产生
+    void Delete(int index) {
+        /* your code here */
+    }
+};
+
+
+#endif //BPT_MEMORYRIVER_HPP
+
+#ifndef _block_river_hpp_
+#define _block_river_hpp_
+
+#include <exception>
+#include <fstream>
+
+using std::string;
+using std::fstream;
+using std::ifstream;
+using std::ofstream;
+
+template<class T, int block_size = 4096>
+class BlockRiver {
+private:
+    /* your code here */
+    fstream file;
+    string file_name;
+    static const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);;
+public:
+    struct BiggerThanABlock : std::exception {};
+    BlockRiver() = default;
+    
+    BlockRiver(const string& file_name) {
+        this->bind(file_name);
+    }
+
+    void bind(const string& file_name) {
+        if (file.is_open()) file.close();
+        file.open(file_name, std::ios::in | std::ios::out | std::ios::binary);
+        this->file_name = file_name;
+    }
+
+    ~BlockRiver() {
+        close();
+    }
+
+    void close() {
+        file.close();
+    }
+
+    void initialise(string FN = "") {
+        if (FN != "") file_name = FN;
+        if (file.is_open()) file.close();
+        file.open(file_name, std::ios::out | std::ios::binary);
+        file.close();
+        this->bind(file_name);
+    }
+
+    //在文件合适位置写入类对象t，并返回写入的位置索引index
+    //位置索引意味着当输入正确的位置索引index，在以下三个函数中都能顺利的找到目标对象进行操作
+    //位置索引index可以取为对象写入的起始位置
+    int write(const T &t) {
+        /* your code here */
+        file.seekp(0,std::ios::end);
+        int index = file.tellp();
+        if constexpr (binable<T>) {
+            char* data = t.to_bin();
+            file.write(data, sizeofT);
+            for (int i = 0; i < 4096-sizeofT; i++) {
+                file.put('\0');
+            }
+            delete []data;
+        }
+        else {
+            file.write(reinterpret_cast<const char *>(&t), sizeofT);
+            for (int i = 0; i < 4096-sizeofT; i++) {
+                file.put('\0');
+            }
+        }
+        return index;
+    }
+
+    //用t的值更新位置索引index对应的对象，保证调用的index都是由write函数产生
+    void update(const T &t, const int index) {
+        /* your code here */
+        file.seekp(index);
+        if constexpr (binable<T>) {
+            char* data = t.to_bin();
+            file.write(data, T::bin_size());
+            delete []data;
+        }
+        else {
+            file.write(reinterpret_cast<const char *>(&t), sizeofT);
+        }
+    }
+
+    //读出位置索引index对应的T对象的值并赋值给t，保证调用的index都是由write函数产生
+    void read(T &t, const int index) {
+        /* your code here */
+        file.seekg(index);
+        if constexpr (binable<T>) {
+            char *data = new char[sizeofT];
+            file.read(data, sizeofT);
+            t.from_bin(data);
+            delete []data;
+        }
+        else {
+            file.read(reinterpret_cast<char *>(&t), sizeofT);
+        }
+    }
+
+    //删除位置索引index对应的对象(不涉及空间回收时，可忽略此函数)，保证调用的index都是由write函数产生
+    void Delete(int index) {
+        /* your code here */
+    }
+};
+
+
+#endif
+
+#ifndef _random_db
+#define _random_db
+
+#include <functional>
+#include <string>
+#include <vector>
+
+struct Empty {};
+
+template<class T, class Comp=std::less<T>, class Attachment = Empty>
+class RandomDB {
+    using head_index = int;
+    using arr_index = int;
+    constexpr static const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
+    constexpr static const int sizeofA = (binable<Attachment>) ? Attachment::bin_size() : sizeof(Attachment);
+public:
+    struct T_A_pair {
+        T first;
+        Attachment second;
+        const char* to_bin();
+        const void from_bin(char* bin);
+        constexpr static const int bin_size();
+    };
+    constexpr static const int array_size = (4096 - sizeof(bool) - sizeof(int)) / T_A_pair::bin_size();
+    struct Comp_A {
+        bool operator()(const T_A_pair& a, const T_A_pair& b) const {
+            return Comp()(a.first, b.first);
+        }
+        bool operator()(const T&a, const T& b) const {
+            return Comp()(a, b);
+        }
+        bool operator()(const T& a, const T_A_pair& b) const {
+            return Comp()(a, b.first);
+        }
+        bool operator()(const T_A_pair& a, const T& b) const {
+            return Comp()(a.first, b);
+        }
+    };
+public:
+    struct head {
+        T begin;
+        T end;
+        head_index next;
+        arr_index body;
+        const char* to_bin();
+        const void from_bin(char* bin); // 虚假const
+        constexpr static const int bin_size();
+    };
+    struct array {
+        T_A_pair data[array_size];
+        int size;
+        bool deprecated = false;
+        const char* to_bin();
+        const void from_bin(char* bin);
+        constexpr static const int bin_size();
+    };
+    RandomDB(std::string dbname, int db_id = 0, std::string path = "", bool duplicate_allowed = true);
+    ~RandomDB();
+    void insert(const T& t);
+    void insert(const T_A_pair& t);
+    void insert(const std::pair<T, Attachment>& t);
+    bool erase(const T& t);
+    std::pair<head_index, int> upper_bound(const T& t);
+    std::pair<head_index, int> lower_bound(const T& t);
+    bool exist(const T& t);
+    std::vector<T_A_pair> find(const T& t);
+    void enable_duplicate();
+    class DBFileNotMatchException;
+    class MissingFileException;
+    class DuplicateException;
+    std::vector<T_A_pair> range(head_index lh, int lp, head_index rh, int rp);
+private:
+    MemoryRiver<head, 16> head_river;
+    BlockRiver<array> body_river;
+    head_index head_begin = -1;
+    head_index head_end = -1;
+    head_index db_id;
+    bool duplicate_allowed;
+protected:
+    arr_index locate(const T& t);
+    // arr_index locate(const T_A_pair& t);
+    head get_head(head_index idx);
+    array get_body(arr_index idx);
+    head_index add_head(const T_A_pair& t, head_index prev = -1);
+};
+
+#endif
+
 #include <filesystem>
 #include <algorithm>
 #include <exception>
@@ -531,4 +866,156 @@ std::vector<typename RandomDB<T, Comp, Attachment>::T_A_pair> RandomDB<T, Comp, 
         pos ++;
     }
     return res;
+}
+
+#ifndef _kvdb_hpp_
+#define _kvdb_hpp_
+
+#include <cstring>
+#include <string>
+#include <vector>
+#include <exception>
+
+template<class VT, class Comp = std::less<VT>, int key_name_len = 64>
+class KVDB {
+    struct KeyTooLongException : std::exception {};
+    using key_type = char[key_name_len];
+    struct kv_pair {
+        key_type key;
+        VT value;
+        static const int bin_size();
+        const char* to_bin();
+        const void from_bin(char* bin);
+    };
+    struct kv_pair_comp {
+        bool operator()(const kv_pair& a, const kv_pair& b) const {
+            int res = std::strcmp(a.key, b.key);
+            if (res == 0) {
+                return Comp()(a.value, b.value);
+            }
+            return res < 0;
+        }
+    };
+    RandomDB<kv_pair, kv_pair_comp> db;
+public:
+    KVDB(std::string dbname, int db_id = 0, std::string path = "", bool duplicate_allowe = false);
+    // ~KVDB() {if (db) delete db;}
+    void insert(std::string k, int v);
+    void erase(std::string k, int v);
+    std::vector<VT> find(std::string k);
+};
+
+#endif
+
+template<class VT, class Comp, int key_name_len>
+const int KVDB<VT, Comp, key_name_len>::kv_pair::bin_size() {
+    if constexpr (binable<VT>) {
+        return key_name_len + VT::bin_size();
+    } else {
+        return key_name_len + sizeof(VT);
+    }
+}
+
+template<class VT, class Comp, int key_name_len>
+const char* KVDB<VT, Comp, key_name_len>::kv_pair::to_bin() {
+    char* bin = new char[bin_size()];
+    memcpy(bin, key.c_str, key_name_len);
+    if constexpr (binable<VT>) {
+        value.to_bin(bin + key_name_len);
+    } else {
+        memcpy(bin + key_name_len, &value, sizeof(VT));
+    }
+    return bin;
+}
+
+template<class VT, class Comp, int key_name_len>
+const void KVDB<VT, Comp, key_name_len>::kv_pair::from_bin(char* bin) {
+    memcpy(key, bin, key_name_len);
+    if constexpr (binable<VT>) {
+        value.from_bin(bin + key_name_len);
+    } else {
+        memcpy(&value, bin + key_name_len, sizeof(VT));
+    }
+}
+
+template<class VT, class Comp, int key_name_len>
+KVDB<VT, Comp, key_name_len>::KVDB(std::string dbname, int db_id, std::string path, bool duplicate_allowed) : db(dbname, db_id, path, duplicate_allowed) {
+}
+
+template<class VT, class Comp, int key_name_len>
+void KVDB<VT, Comp, key_name_len>::insert(std::string k, int v) {
+    if (k.length() >= key_name_len) {
+        throw KeyTooLongException();
+    }
+    kv_pair p;
+    strcpy(p.key, k.c_str());
+    p.value = v;
+    db.insert(p);
+}
+
+template<class VT, class Comp, int key_name_len>
+void KVDB<VT, Comp, key_name_len>::erase(std::string k, int v) {
+    if (k.length() >= key_name_len) {
+        throw KeyTooLongException();
+    }
+    kv_pair p;
+    strcpy(p.key, k.c_str());
+    p.value = v;
+    db.erase(p);
+}
+
+template<class VT, class Comp, int key_name_len>
+std::vector<VT> KVDB<VT, Comp, key_name_len>::find(std::string k) {
+    if (k.length() >= key_name_len) {
+        throw KeyTooLongException();
+    }
+    kv_pair p;
+    strcpy(p.key, k.c_str());
+    std::vector<VT> res;
+    p.value = 0;
+    auto l = db.lower_bound(p);
+    p.value = 2147483647;
+    auto r = db.upper_bound(p);
+    auto call = db.range(l.first, l.second, r.first, r.second);
+    for (int i = 0; i < call.size(); i++) {
+        res.push_back(call[i].first.value);
+    }
+    return res;
+}
+
+#include <vector>
+#include <iostream>
+
+int main() {
+    std::string op;
+    int n;
+    std::cin >> n;
+    KVDB<int, std::less<int>> db("db2");
+    for (int i = 0; i < n; i++) {
+        std::cin >> op;
+        if (op == "insert") {
+            std::string key;
+            int value;
+            std::cin >> key >> value;
+            db.insert(key, value);
+        }
+        else if (op == "delete") {
+            std::string key;
+            int value;
+            std::cin >> key >> value;
+            db.erase(key, value);
+        }
+        else if (op == "find") {
+            std::string key;
+            std::cin >> key;
+            std::vector<int> res = db.find(key);
+            for (int i : res) {
+                std::cout << i << ' ';
+            }
+            if (res.empty()) {
+                std::cout << "null";
+            }
+            std::cout << '\n';
+        }
+    }
 }
