@@ -20,12 +20,17 @@ private:
     string file_name;
     static constexpr const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);
     static_assert(sizeofT < block_size);
+    unsigned int empty_tail_count = 0;
 public:
     struct BiggerThanABlock : std::exception {};
     BlockRiver() = default;
     
     BlockRiver(const string& file_name) {
         this->bind(file_name);
+    }
+
+    void set_empty_tail(int n) {
+        empty_tail_count = n;
     }
 
     void bind(const string& file_name) {
@@ -54,29 +59,30 @@ public:
     //位置索引意味着当输入正确的位置索引index，在以下三个函数中都能顺利的找到目标对象进行操作
     //位置索引index可以取为对象写入的起始位置
     int write(T &t) {
-        /* your code here */
-        file.seekp(0, std::ios::end);
-        int index = file.tellp();
+        file.seekp(-(empty_tail_count * block_size), std::ios::end);
+        if (empty_tail_count) { // != 0
+            empty_tail_count--;
+        }
+        int init = file.tellp();
         if constexpr (binable<T>) {
             char* data = t.to_bin();
-            int init = file.tellp();
-            file.seekp(init + block_size);
+            file.seekp(init + block_size - 1);
+            file.put(0);
             file.seekp(init);
             file.write(data, sizeofT);
             delete []data;
         }
         else {
-            int init = file.tellp();
-            file.seekp(init + block_size);
+            file.seekp(init + block_size - 1);
+            file.put(0);
             file.seekp(init);
             file.write(reinterpret_cast<const char *>(&t), sizeofT);
         }
-        return index;
+        return init;
     }
 
     //用t的值更新位置索引index对应的对象，保证调用的index都是由write函数产生
     void update(T &t, const int index) {
-        /* your code here */
         file.seekp(index);
         if constexpr (binable<T>) {
             char* data = t.to_bin();
@@ -103,9 +109,9 @@ public:
         }
     }
 
-    //删除位置索引index对应的对象(不涉及空间回收时，可忽略此函数)，保证调用的index都是由write函数产生
-    void Delete(int index) {
-        /* your code here */
+    //删除最后的n个对象
+    void Delete(int count) {
+        empty_tail_count += count;
     }
 };
 
