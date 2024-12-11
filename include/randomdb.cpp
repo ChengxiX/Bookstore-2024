@@ -139,10 +139,10 @@ void RandomDB<T, Comp, Attachment>::insert(const T_A_pair& t_A) {
     array content = get_body(h.body);
     if (content.size < array_size) {
         auto back = std::upper_bound(content.data, content.data + content.size, t_A, Comp_A());
-        if (!duplicate_allowed) {
+        if (!duplicate_allowed && back != content.data) {
             auto p = back;
             p --;
-            if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) { // == !(Comp()(t, *p) || Comp()(*p, t))
+            if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) {
                 throw DuplicateException();
             }
         }
@@ -176,6 +176,13 @@ void RandomDB<T, Comp, Attachment>::insert(const T_A_pair& t_A) {
         head new_head = head{new_arr.data[0].first, new_arr.data[new_arr.size - 1].first, h.next};
         if (!Comp()(t_A.first, new_head.begin)) {
             auto back = std::upper_bound(new_arr.data, new_arr.data + new_arr.size, t_A, Comp_A());
+            if (!duplicate_allowed && back != content.data) {
+                auto p = back;
+                p --;
+                if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) {
+                    throw DuplicateException();
+                }
+            }
             std::copy_backward(back, new_arr.data + new_arr.size,
              new_arr.data + new_arr.size + 1);
             new_arr.size ++;
@@ -186,12 +193,22 @@ void RandomDB<T, Comp, Attachment>::insert(const T_A_pair& t_A) {
         }
         else {
             auto back = std::upper_bound(content.data, content.data + content.size, t_A, Comp_A());
+            if (!duplicate_allowed && back != content.data) {
+                auto p = back;
+                p --;
+                if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) { // == !(Comp()(t, *p) || Comp()(*p, t))
+                    throw DuplicateException();
+                }
+            }
             std::copy_backward(back, content.data + content.size,
              content.data + content.size + 1);
             content.size ++;
             *back = t_A;
             if (Comp()(h.end, t_A.first)) {
                 h.end = t_A.first;
+            }
+            if (Comp()(t_A.first, h.begin)) {
+                h.begin = t_A.first;
             }
         }
         new_head.body = body_river.write(new_arr);
