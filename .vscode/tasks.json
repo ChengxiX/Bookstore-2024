@@ -9,7 +9,8 @@
                 "-g",
                 "${file}",
                 "-o",
-                "/tmp/ramdisk/compiler_tmp${workspaceFolder}/${fileBasenameNoExtension}"
+                "/tmp/ramdisk/compiler_tmp${workspaceFolder}/${fileBasenameNoExtension}",
+                "-std=c++2b"
             ],
             "options": {
                 "cwd": "${fileDirname}"
