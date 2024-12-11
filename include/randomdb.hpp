@@ -46,6 +46,7 @@ public:
         T end;
         head_index next;
         arr_index body;
+        bool deprecated = false;
         const char* to_bin();
         const void from_bin(char* bin); // 虚假const
         constexpr static const int bin_size();

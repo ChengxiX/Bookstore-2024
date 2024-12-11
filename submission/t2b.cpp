@@ -262,7 +262,7 @@ class RandomDB {
     using arr_index = int;
     constexpr static const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
     constexpr static const int sizeofA = (binable<Attachment>) ? Attachment::bin_size() : sizeof(Attachment);
-    static const int block_size = 4096;
+    static const int block_size = 24576;
 public:
     struct T_A_pair {
         T first;
@@ -292,6 +292,7 @@ public:
         T end;
         head_index next;
         arr_index body;
+        bool deprecated = false;
         const char* to_bin();
         const void from_bin(char* bin); // 虚假const
         constexpr static const int bin_size();
@@ -321,7 +322,7 @@ public:
     std::vector<T_A_pair> range(head_index lh, int lp, head_index rh, int rp);
 private:
     MemoryRiver<head, 16> head_river;
-    BlockRiver<array> body_river;
+    BlockRiver<array, block_size> body_river;
     head_index head_begin = -1;
     head_index head_end = -1;
     head_index db_id;
@@ -475,10 +476,10 @@ void RandomDB<T, Comp, Attachment>::insert(const T_A_pair& t_A) {
     array content = get_body(h.body);
     if (content.size < array_size) {
         auto back = std::upper_bound(content.data, content.data + content.size, t_A, Comp_A());
-        if (!duplicate_allowed) {
+        if (!duplicate_allowed && back != content.data) {
             auto p = back;
             p --;
-            if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) { // == !(Comp()(t, *p) || Comp()(*p, t))
+            if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) {
                 throw DuplicateException();
             }
         }
@@ -512,6 +513,13 @@ void RandomDB<T, Comp, Attachment>::insert(const T_A_pair& t_A) {
         head new_head = head{new_arr.data[0].first, new_arr.data[new_arr.size - 1].first, h.next};
         if (!Comp()(t_A.first, new_head.begin)) {
             auto back = std::upper_bound(new_arr.data, new_arr.data + new_arr.size, t_A, Comp_A());
+            if (!duplicate_allowed && back != content.data) {
+                auto p = back;
+                p --;
+                if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) {
+                    throw DuplicateException();
+                }
+            }
             std::copy_backward(back, new_arr.data + new_arr.size,
              new_arr.data + new_arr.size + 1);
             new_arr.size ++;
@@ -522,12 +530,22 @@ void RandomDB<T, Comp, Attachment>::insert(const T_A_pair& t_A) {
         }
         else {
             auto back = std::upper_bound(content.data, content.data + content.size, t_A, Comp_A());
+            if (!duplicate_allowed && back != content.data) {
+                auto p = back;
+                p --;
+                if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) { // == !(Comp()(t, *p) || Comp()(*p, t))
+                    throw DuplicateException();
+                }
+            }
             std::copy_backward(back, content.data + content.size,
              content.data + content.size + 1);
             content.size ++;
             *back = t_A;
             if (Comp()(h.end, t_A.first)) {
                 h.end = t_A.first;
+            }
+            if (Comp()(t_A.first, h.begin)) {
+                h.begin = t_A.first;
             }
         }
         new_head.body = body_river.write(new_arr);
@@ -559,16 +577,36 @@ bool RandomDB<T, Comp, Attachment>::erase(const T& t) {
     if (Comp_A()(t, *p) || Comp_A()(*p, t)) {
         return false;
     }
-    std::copy(bigger, content.data + content.size, bigger - 1);
-    content.size --;
+    bool update_head = false;
     if (bigger == content.data + content.size + 1) {
         h.end = content.data[content.size - 1].first;
-        head_river.update(h, idx);
+        update_head = true;
     }
     if (p == content.data) {
         h.begin = content.data[0].first;
-        head_river.update(h, idx);
+        update_head = true;
     }
+    std::copy(bigger, content.data + content.size, bigger - 1);
+    content.size --;
+    if (content.size < array_size / 2) { // 合并空间，只能向前
+        head_index next = h.next;
+        if (next != -1) {
+            head next_head = get_head(next);
+            array next_content = get_body(next_head.body);
+            if (next_content.size < array_size / 2) {
+                h.next = next_head.next;
+                next_head.deprecated = true;
+                next_content.deprecated = true;
+                std::copy(next_content.data, next_content.data + next_content.size, content.data + content.size);
+                content.size += next_content.size;
+                update_head = true;
+                head_river.update(next_head, next);
+                body_river.update(next_content, next_head.body);
+                h.end = next_head.end;
+            }
+        }
+    }
+    if (update_head) {head_river.update(h, idx);}
     body_river.update(content, h.body);
     return true;
 }
@@ -620,10 +658,10 @@ void RandomDB<T, Comp, Attachment>::enable_duplicate() {
 template<class T, class Comp, class Attachment>
 constexpr const int RandomDB<T, Comp, Attachment>::head::bin_size() {
     if constexpr (binable<T>) {
-        return T::bin_size() * 2 + sizeof(head_index) + sizeof(arr_index);
+        return T::bin_size() * 2 + sizeof(head_index) + sizeof(arr_index) + sizeof(bool);
     }
     else {
-        return sizeof(T) * 2 + sizeof(head_index) + sizeof(arr_index) + sizeof(int);
+        return sizeof(T) * 2 + sizeof(head_index) + sizeof(arr_index) + sizeof(int) + sizeof(bool);
     }
 }
 
@@ -642,6 +680,8 @@ const char* RandomDB<T, Comp, Attachment>::head::to_bin() {
         std::copy(reinterpret_cast<char*>(&next), reinterpret_cast<char*>(&next) + sizeof(head_index), ptr);
         ptr += sizeof(head_index);
         std::copy(reinterpret_cast<char*>(&body), reinterpret_cast<char*>(&body) + sizeof(arr_index), ptr);
+        ptr += sizeof(arr_index);
+        std::copy(reinterpret_cast<char*>(&deprecated), reinterpret_cast<char*>(&deprecated) + sizeof(bool), ptr);
         return bin;
     }
     else {
@@ -662,6 +702,8 @@ const void RandomDB<T, Comp, Attachment>::head::from_bin(char* bin) {
         std::copy(ptr, ptr + sizeof(head_index), reinterpret_cast<char*>(&next));
         ptr += sizeof(head_index);
         std::copy(ptr, ptr + sizeof(arr_index), reinterpret_cast<char*>(&body));
+        ptr += sizeof(arr_index);
+        std::copy(ptr, ptr + sizeof(bool), reinterpret_cast<char*>(&deprecated));
     }
     else {
         std::copy(bin, bin + sizeof(head), reinterpret_cast<char*>(this));
