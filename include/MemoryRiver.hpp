@@ -13,6 +13,7 @@ template<class T, int info_len = 2>
 class MemoryRiver {
 private:
     /* your code here */
+    struct InfoOverflow : std::exception {};
     fstream file;
     string file_name;
     static const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);
@@ -51,7 +52,7 @@ public:
 
     //读出第n个int的值赋给tmp，1_base
     void get_info(int &tmp, int n) {
-        if (n > info_len) return;
+        if (n > info_len) throw InfoOverflow();
         /* your code here */
         file.seekg((n - 1) * sizeof(int));
         file.read(reinterpret_cast<char *>(&tmp), sizeof(int));
@@ -59,7 +60,7 @@ public:
 
     //将tmp写入第n个int的位置，1_base
     void write_info(int tmp, int n) {
-        if (n > info_len) return;
+        if (n > info_len) throw InfoOverflow();
         /* your code here */
         file.seekp((n - 1) * sizeof(int));
         file.write(reinterpret_cast<char *>(&tmp), sizeof(int));

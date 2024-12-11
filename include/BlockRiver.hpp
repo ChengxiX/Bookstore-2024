@@ -15,7 +15,7 @@ using std::ofstream;
 template<class T, int block_size = 4096>
 class BlockRiver {
 private:
-    /* your code here */
+    struct InfoOverflow : std::exception {};
     fstream file;
     string file_name;
     static constexpr const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);
@@ -51,8 +51,26 @@ public:
         if (FN != "") file_name = FN;
         if (file.is_open()) file.close();
         file.open(file_name, std::ios::out | std::ios::binary);
+        int tmp = 0;
+        file.seekp(std::ios::beg);
+        for (int i = 0; i < block_size; ++i) // 留出一个头块来存info
+            file.put(0);
         file.close();
         this->bind(file_name);
+    }
+
+    //读出第n个int的值赋给tmp，1_base
+    void get_info(int &tmp, int n) {
+        if (n > block_size/sizeof(int)) throw InfoOverflow();
+        file.seekg((n - 1) * sizeof(int));
+        file.read(reinterpret_cast<char *>(&tmp), sizeof(int));
+    }
+
+    //将tmp写入第n个int的位置，1_base
+    void write_info(int tmp, int n) {
+        if (n > block_size/sizeof(int)) throw InfoOverflow();
+        file.seekp((n - 1) * sizeof(int));
+        file.write(reinterpret_cast<char *>(&tmp), sizeof(int));
     }
 
     //在文件合适位置写入类对象t，并返回写入的位置索引index

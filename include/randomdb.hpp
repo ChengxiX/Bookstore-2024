@@ -73,6 +73,7 @@ public:
     class MissingFileException;
     class DuplicateException;
     std::vector<T_A_pair> range(head_index lh, int lp, head_index rh, int rp);
+    void vacuum();
 private:
     MemoryRiver<head, 16> head_river;
     BlockRiver<array, block_size> body_river;
