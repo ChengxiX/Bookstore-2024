@@ -16,7 +16,7 @@ class RandomDB {
     using arr_index = int;
     constexpr static const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
     constexpr static const int sizeofA = (binable<Attachment>) ? Attachment::bin_size() : sizeof(Attachment);
-    static const int block_size = 4096; // sweet point
+    static const int block_size = 32768; // sweet point
 public:
     struct T_A_pair {
         T first;
@@ -48,7 +48,7 @@ public:
         arr_index body;
         bool deprecated = false;
         char* to_bin();
-        void from_bin(char* bin); // 虚假const
+        void from_bin(char* bin);
         constexpr static const int bin_size();
     };
     struct array {

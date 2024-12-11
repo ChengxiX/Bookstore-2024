@@ -97,17 +97,20 @@ RandomDB<T, Comp, Attachment>::add_head(const T_A_pair& t, head_index prev) {
     if (prev == -1) {
         prev = head_end;
     }
-    arr_index c = body_river.write(array{{t}, 1});
+    array tmp_body = array{{t}, 1};
+    arr_index c = body_river.write(tmp_body);
     if (prev != -1) {
         auto p = get_head(prev);
-        p.next = head_river.write(head{t.first, t.first, p.next, c});
+        head tmp_next = head{t.first, t.first, p.next, c};
+        p.next = head_river.write(tmp_next);
         head_river.update(p, prev);
         head_end = p.next;
         head_river.write_info(head_end, 4);
         return p.next;
     }
     else {
-        head_begin = head_river.write(head{t.first, t.first, -1, c});
+        head tmp = head{t.first, t.first, -1, c};
+        head_begin = head_river.write(tmp);
         head_end = head_begin;
         head_river.write_info(head_begin, 3);
         head_river.write_info(head_end, 4);

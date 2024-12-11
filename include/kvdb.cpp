@@ -16,7 +16,7 @@ constexpr const int KVDB<VT, Comp, key_name_len>::kv_pair::bin_size() {
 template<class VT, class Comp, int key_name_len>
 char* KVDB<VT, Comp, key_name_len>::kv_pair::to_bin() {
     char* bin = new char[bin_size()];
-    memcpy(bin, key.c_str, key_name_len);
+    memcpy(bin, key, key_name_len);
     if constexpr (binable<VT>) {
         const char * v = value.to_bin(bin + key_name_len);
         memcpy(bin + key_name_len, v, VT::bin_size());

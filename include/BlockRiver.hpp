@@ -25,12 +25,10 @@ public:
     BlockRiver() = default;
     
     BlockRiver(const string& file_name) {
-        // std::cout << binable<T> << std::endl;
         this->bind(file_name);
     }
 
     void bind(const string& file_name) {
-        // std::cout << binable<T> << std::endl;
         if (file.is_open()) file.close();
         file.open(file_name, std::ios::in | std::ios::out | std::ios::binary);
         this->file_name = file_name;
@@ -55,9 +53,9 @@ public:
     //在文件合适位置写入类对象t，并返回写入的位置索引index
     //位置索引意味着当输入正确的位置索引index，在以下三个函数中都能顺利的找到目标对象进行操作
     //位置索引index可以取为对象写入的起始位置
-    int write(const T &t) {
+    int write(T &t) {
         /* your code here */
-        file.seekp(0,std::ios::end);
+        file.seekp(0, std::ios::end);
         int index = file.tellp();
         if constexpr (binable<T>) {
             char* data = t.to_bin();
@@ -77,7 +75,7 @@ public:
     }
 
     //用t的值更新位置索引index对应的对象，保证调用的index都是由write函数产生
-    void update(const T &t, const int index) {
+    void update(T &t, const int index) {
         /* your code here */
         file.seekp(index);
         if constexpr (binable<T>) {
