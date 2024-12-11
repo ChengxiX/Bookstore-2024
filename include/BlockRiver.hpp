@@ -5,6 +5,8 @@
 #include <fstream>
 #include "binable.hpp"
 
+#include <iostream>
+
 using std::string;
 using std::fstream;
 using std::ifstream;
@@ -16,23 +18,19 @@ private:
     /* your code here */
     fstream file;
     string file_name;
-    static constexpr const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);;
+    static constexpr const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);
+    static_assert(sizeofT < block_size);
 public:
     struct BiggerThanABlock : std::exception {};
-    BlockRiver() {
-        if constexpr (sizeofT > block_size) {
-            throw BiggerThanABlock();
-        }
-    }
+    BlockRiver() = default;
     
     BlockRiver(const string& file_name) {
-        if constexpr (sizeofT > block_size) {
-            throw BiggerThanABlock();
-        }
+        // std::cout << binable<T> << std::endl;
         this->bind(file_name);
     }
 
     void bind(const string& file_name) {
+        // std::cout << binable<T> << std::endl;
         if (file.is_open()) file.close();
         file.open(file_name, std::ios::in | std::ios::out | std::ios::binary);
         this->file_name = file_name;

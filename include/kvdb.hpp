@@ -14,9 +14,9 @@ class KVDB {
     struct kv_pair {
         key_type key;
         VT value;
-        static const int bin_size();
-        const char* to_bin();
-        const void from_bin(char* bin);
+        constexpr static const int bin_size();
+        char* to_bin();
+        void from_bin(char* bin);
     };
     struct kv_pair_comp {
         bool operator()(const kv_pair& a, const kv_pair& b) const {

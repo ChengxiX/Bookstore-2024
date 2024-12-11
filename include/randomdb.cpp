@@ -329,7 +329,7 @@ constexpr const int RandomDB<T, Comp, Attachment>::head::bin_size() {
 }
 
 template<class T, class Comp, class Attachment>
-const char* RandomDB<T, Comp, Attachment>::head::to_bin() {
+char* RandomDB<T, Comp, Attachment>::head::to_bin() {
     if constexpr (binable<T>) {
         char* bin = new char[bin_size()];
         char* ptr = bin;
@@ -355,7 +355,7 @@ const char* RandomDB<T, Comp, Attachment>::head::to_bin() {
 }
 
 template<class T, class Comp, class Attachment>
-const void RandomDB<T, Comp, Attachment>::head::from_bin(char* bin) {
+void RandomDB<T, Comp, Attachment>::head::from_bin(char* bin) {
     if constexpr (binable<T>) {
         char* ptr = bin;
         this->begin.from_bin(ptr);
@@ -379,7 +379,7 @@ constexpr const int RandomDB<T, Comp, Attachment>::array::bin_size() {
 }
 
 template<class T, class Comp, class Attachment>
-const char* RandomDB<T, Comp, Attachment>::array::to_bin() {
+char* RandomDB<T, Comp, Attachment>::array::to_bin() {
     char* bin = new char[bin_size()];
     char* ptr = bin;
     std::copy(reinterpret_cast<char*>(&size), reinterpret_cast<char*>(&size) + sizeof(int), ptr);
@@ -396,7 +396,7 @@ const char* RandomDB<T, Comp, Attachment>::array::to_bin() {
 }
 
 template<class T, class Comp, class Attachment>
-const void RandomDB<T, Comp, Attachment>::array::from_bin(char* bin) {
+void RandomDB<T, Comp, Attachment>::array::from_bin(char* bin) {
     char* ptr = bin;
     std::copy(ptr, ptr + sizeof(int), reinterpret_cast<char*>(&size));
     ptr += sizeof(int);
@@ -438,7 +438,7 @@ constexpr const int RandomDB<T, Comp, Attachment>::T_A_pair::bin_size() {
 }
 
 template<class T, class Comp, class Attachment>
-const void RandomDB<T, Comp, Attachment>::T_A_pair::from_bin(char* bin) {
+void RandomDB<T, Comp, Attachment>::T_A_pair::from_bin(char* bin) {
     if constexpr (std::is_same<Attachment, Empty>::value) {
         if constexpr (binable<T>) {
             first.from_bin(bin);
@@ -466,7 +466,7 @@ const void RandomDB<T, Comp, Attachment>::T_A_pair::from_bin(char* bin) {
 }
 
 template<class T, class Comp, class Attachment>
-const char* RandomDB<T, Comp, Attachment>::T_A_pair::to_bin() {
+char* RandomDB<T, Comp, Attachment>::T_A_pair::to_bin() {
     if constexpr (std::is_same<Attachment, Empty>::value) {
         if constexpr (binable<T>) {
             return first.to_bin();
@@ -505,7 +505,6 @@ template<class T, class Comp, class Attachment>
 std::vector<typename RandomDB<T, Comp, Attachment>::T_A_pair> RandomDB<T, Comp, Attachment>::find(const T& t) {
     auto [idx_l, pos_l] = lower_bound(t);
     auto [idx_r, pos_r] = upper_bound(t);
-    
 }
 
 template<class T, class Comp, class Attachment>

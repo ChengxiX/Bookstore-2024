@@ -16,13 +16,13 @@ class RandomDB {
     using arr_index = int;
     constexpr static const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
     constexpr static const int sizeofA = (binable<Attachment>) ? Attachment::bin_size() : sizeof(Attachment);
-    static const int block_size = 32768; // sweet point
+    static const int block_size = 4096; // sweet point
 public:
     struct T_A_pair {
         T first;
         Attachment second;
-        const char* to_bin();
-        const void from_bin(char* bin);
+        char* to_bin();
+        void from_bin(char* bin);
         constexpr static const int bin_size();
     };
     constexpr static const int array_size = (block_size - sizeof(bool) - sizeof(int)) / T_A_pair::bin_size();
@@ -47,16 +47,16 @@ public:
         head_index next;
         arr_index body;
         bool deprecated = false;
-        const char* to_bin();
-        const void from_bin(char* bin); // 虚假const
+        char* to_bin();
+        void from_bin(char* bin); // 虚假const
         constexpr static const int bin_size();
     };
     struct array {
         T_A_pair data[array_size];
         int size;
         bool deprecated = false;
-        const char* to_bin();
-        const void from_bin(char* bin);
+        char* to_bin();
+        void from_bin(char* bin);
         constexpr static const int bin_size();
     };
     RandomDB(std::string dbname, int db_id = 0, std::string path = "", bool duplicate_allowed = true);

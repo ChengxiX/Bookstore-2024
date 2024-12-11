@@ -5,7 +5,7 @@
 
 
 template<class VT, class Comp, int key_name_len>
-const int KVDB<VT, Comp, key_name_len>::kv_pair::bin_size() {
+constexpr const int KVDB<VT, Comp, key_name_len>::kv_pair::bin_size() {
     if constexpr (binable<VT>) {
         return key_name_len + VT::bin_size();
     } else {
@@ -14,11 +14,13 @@ const int KVDB<VT, Comp, key_name_len>::kv_pair::bin_size() {
 }
 
 template<class VT, class Comp, int key_name_len>
-const char* KVDB<VT, Comp, key_name_len>::kv_pair::to_bin() {
+char* KVDB<VT, Comp, key_name_len>::kv_pair::to_bin() {
     char* bin = new char[bin_size()];
     memcpy(bin, key.c_str, key_name_len);
     if constexpr (binable<VT>) {
-        value.to_bin(bin + key_name_len);
+        const char * v = value.to_bin(bin + key_name_len);
+        memcpy(bin + key_name_len, v, VT::bin_size());
+        delete[] v;
     } else {
         memcpy(bin + key_name_len, &value, sizeof(VT));
     }
@@ -26,7 +28,7 @@ const char* KVDB<VT, Comp, key_name_len>::kv_pair::to_bin() {
 }
 
 template<class VT, class Comp, int key_name_len>
-const void KVDB<VT, Comp, key_name_len>::kv_pair::from_bin(char* bin) {
+void KVDB<VT, Comp, key_name_len>::kv_pair::from_bin(char* bin) {
     memcpy(key, bin, key_name_len);
     if constexpr (binable<VT>) {
         value.from_bin(bin + key_name_len);
