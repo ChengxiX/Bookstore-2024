@@ -16,6 +16,7 @@ class RandomDB {
     using arr_index = int;
     constexpr static const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
     constexpr static const int sizeofA = (binable<Attachment>) ? Attachment::bin_size() : sizeof(Attachment);
+    static const int block_size = 24576;
 public:
     struct T_A_pair {
         T first;
@@ -24,7 +25,7 @@ public:
         const void from_bin(char* bin);
         constexpr static const int bin_size();
     };
-    constexpr static const int array_size = (4096 - sizeof(bool) - sizeof(int)) / T_A_pair::bin_size();
+    constexpr static const int array_size = (block_size - sizeof(bool) - sizeof(int)) / T_A_pair::bin_size();
     struct Comp_A {
         bool operator()(const T_A_pair& a, const T_A_pair& b) const {
             return Comp()(a.first, b.first);
@@ -74,7 +75,7 @@ public:
     std::vector<T_A_pair> range(head_index lh, int lp, head_index rh, int rp);
 private:
     MemoryRiver<head, 16> head_river;
-    BlockRiver<array> body_river;
+    BlockRiver<array, block_size> body_river;
     head_index head_begin = -1;
     head_index head_end = -1;
     head_index db_id;

@@ -194,17 +194,17 @@ public:
         int index = file.tellp();
         if constexpr (binable<T>) {
             char* data = t.to_bin();
+            int init = file.tellp();
+            file.seekp(init + block_size);
+            file.seekp(init);
             file.write(data, sizeofT);
-            for (int i = 0; i < 4096-sizeofT; i++) {
-                file.put('\0');
-            }
             delete []data;
         }
         else {
+            int init = file.tellp();
+            file.seekp(init + block_size);
+            file.seekp(init);
             file.write(reinterpret_cast<const char *>(&t), sizeofT);
-            for (int i = 0; i < 4096-sizeofT; i++) {
-                file.put('\0');
-            }
         }
         return index;
     }
@@ -262,6 +262,7 @@ class RandomDB {
     using arr_index = int;
     constexpr static const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
     constexpr static const int sizeofA = (binable<Attachment>) ? Attachment::bin_size() : sizeof(Attachment);
+    static const int block_size = 4096;
 public:
     struct T_A_pair {
         T first;
@@ -270,7 +271,7 @@ public:
         const void from_bin(char* bin);
         constexpr static const int bin_size();
     };
-    constexpr static const int array_size = (4096 - sizeof(bool) - sizeof(int)) / T_A_pair::bin_size();
+    constexpr static const int array_size = (block_size - sizeof(bool) - sizeof(int)) / T_A_pair::bin_size();
     struct Comp_A {
         bool operator()(const T_A_pair& a, const T_A_pair& b) const {
             return Comp()(a.first, b.first);

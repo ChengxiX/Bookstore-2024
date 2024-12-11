@@ -56,17 +56,17 @@ public:
         int index = file.tellp();
         if constexpr (binable<T>) {
             char* data = t.to_bin();
+            int init = file.tellp();
+            file.seekp(init + block_size);
+            file.seekp(init);
             file.write(data, sizeofT);
-            for (int i = 0; i < 4096-sizeofT; i++) {
-                file.put('\0');
-            }
             delete []data;
         }
         else {
+            int init = file.tellp();
+            file.seekp(init + block_size);
+            file.seekp(init);
             file.write(reinterpret_cast<const char *>(&t), sizeofT);
-            for (int i = 0; i < 4096-sizeofT; i++) {
-                file.put('\0');
-            }
         }
         return index;
     }
