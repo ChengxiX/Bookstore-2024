@@ -33,7 +33,7 @@ public:
     // ~KVDB() {if (db) delete db;}
     void insert(std::string k, int v);
     void erase(std::string k, int v);
-    std::vector<VT> find(std::string k);
+    std::vector<std::pair<typename KVDB<VT, Comp, key_name_len>::key_type, VT>> find(std::string k);
 };
 
 #endif

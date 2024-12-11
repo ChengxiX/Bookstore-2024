@@ -24,12 +24,9 @@ int main() {
         else if (op == "find") {
             std::string key;
             std::cin >> key;
-            if (key == "23"){
-                int x = 2;
-            }
-            std::vector<int> res = db.find(key);
-            for (int i : res) {
-                std::cout << i << ' ';
+            auto res = db.find(key);
+            for (auto i : res) {
+                std::cout << i.second << ' ';
             }
             if (res.empty()) {
                 std::cout << "null";

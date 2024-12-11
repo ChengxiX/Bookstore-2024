@@ -1,5 +1,7 @@
 #include "kvdb.hpp"
 #include "binable.hpp"
+#include <cstring>
+#include <utility>
 
 
 template<class VT, class Comp, int key_name_len>
@@ -60,20 +62,22 @@ void KVDB<VT, Comp, key_name_len>::erase(std::string k, int v) {
 }
 
 template<class VT, class Comp, int key_name_len>
-std::vector<VT> KVDB<VT, Comp, key_name_len>::find(std::string k) {
+std::vector<std::pair<typename KVDB<VT, Comp, key_name_len>::key_type, VT>> KVDB<VT, Comp, key_name_len>::find(std::string k) {
     if (k.length() >= key_name_len) {
         throw KeyTooLongException();
     }
     kv_pair p;
     strcpy(p.key, k.c_str());
-    std::vector<VT> res;
+    std::vector<std::pair<key_type, VT>> res;
     p.value = 0;
     auto l = db.lower_bound(p);
     p.value = 2147483647;
     auto r = db.upper_bound(p);
     auto call = db.range(l.first, l.second, r.first, r.second);
+    res.resize(call.size());
     for (int i = 0; i < call.size(); i++) {
-        res.push_back(call[i].first.value);
+        res[i].second = call[i].first.value;
+        strcpy(res[i].first, call[i].first.key);
     }
     return res;
 }

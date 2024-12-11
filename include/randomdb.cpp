@@ -91,30 +91,6 @@ typename RandomDB<T, Comp, Attachment>::arr_index RandomDB<T, Comp, Attachment>:
     return prv;
 }
 
-// template<class T, class Comp, class Attachment>
-// typename RandomDB<T, Comp, Attachment>::head_index 
-// RandomDB<T, Comp, Attachment>::add_head(const T& t, head_index prev) {
-//     if (prev == -1) {
-//         prev = head_end;
-//     }
-//     arr_index c = body_river.write(array{{t}, 1});
-//     if (prev != -1) {
-//         auto p = get_head(prev);
-//         p.next = head_river.write(head{t, t, p.next, c});
-//         head_river.update(p, prev);
-//         head_end = p.next;
-//         head_river.write_info(head_end, 4);
-//         return p.next;
-//     }
-//     else {
-//         head_begin = head_river.write(head{t, t, -1, c});
-//         head_end = head_begin;
-//         head_river.write_info(head_begin, 3);
-//         head_river.write_info(head_end, 4);
-//         return head_begin;
-//     }
-// }
-
 template<class T, class Comp, class Attachment>
 typename RandomDB<T, Comp, Attachment>::head_index 
 RandomDB<T, Comp, Attachment>::add_head(const T_A_pair& t, head_index prev) {
@@ -187,19 +163,17 @@ void RandomDB<T, Comp, Attachment>::insert(const T_A_pair& t_A) {
     }
     else {
         if (Comp()(h.end, t_A.first)) {
-            add_head(t_A);
+            add_head(t_A, idx);
             return;
         }
-        array cont = get_body(h.body);
         array new_arr = array{};
         new_arr.size = array_size/2;
-        for (int i = 0; i < array_size / 2; i++) {
-            new_arr.data[i] = cont.data[i + array_size - array_size / 2];
+        content.size = array_size - array_size / 2;
+        for (int i = 0; i < new_arr.size; i++) {
+            new_arr.data[i] = content.data[i + content.size];
         }
-        new_arr.size = array_size / 2;
-        cont.size = array_size - array_size / 2;
-        h.end = cont.data[array_size - array_size / 2 - 1].first;
-        head new_head = head{new_arr.data[0].first, new_arr.data[array_size / 2 - 1].first, h.next};
+        h.end = content.data[content.size - 1].first;
+        head new_head = head{new_arr.data[0].first, new_arr.data[new_arr.size - 1].first, h.next};
         if (!Comp()(t_A.first, new_head.begin)) {
             auto back = std::upper_bound(new_arr.data, new_arr.data + new_arr.size, t_A, Comp_A());
             std::copy_backward(back, new_arr.data + new_arr.size,
@@ -211,27 +185,23 @@ void RandomDB<T, Comp, Attachment>::insert(const T_A_pair& t_A) {
             }
         }
         else {
-            auto back = std::upper_bound(cont.data, cont.data + cont.size, t_A, Comp_A());
-            std::copy_backward(back, cont.data + cont.size,
-             cont.data + cont.size + 1);
-            cont.size ++;
+            auto back = std::upper_bound(content.data, content.data + content.size, t_A, Comp_A());
+            std::copy_backward(back, content.data + content.size,
+             content.data + content.size + 1);
+            content.size ++;
             *back = t_A;
             if (Comp()(h.end, t_A.first)) {
                 h.end = t_A.first;
             }
-            if (Comp()(t_A.first, h.begin)) {
-                h.begin = t_A.first;
-            }
         }
-        arr_index a = body_river.write(new_arr);
-        new_head.body = a;
+        new_head.body = body_river.write(new_arr);
         h.next = head_river.write(new_head);
         head_river.update(h, idx);
         if (idx == head_end) {
             head_end = h.next;
             head_river.write_info(head_end, 4);
         }
-        body_river.update(cont, h.body);
+        body_river.update(content, h.body);
     }
 }
 
