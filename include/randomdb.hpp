@@ -10,13 +10,12 @@
 
 struct Empty {};
 
-template<class T, class Comp=std::less<T>, class Attachment = Empty>
+template<class T, class Comp=std::less<T>, class Attachment = Empty, int block_size = 32768>
 class RandomDB {
     using head_index = int;
     using arr_index = int;
     constexpr static const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
     constexpr static const int sizeofA = (binable<Attachment>) ? Attachment::bin_size() : sizeof(Attachment);
-    static const int block_size = 32768; // sweet point
 public:
     struct T_A_pair {
         T first;
