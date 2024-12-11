@@ -1,4 +1,4 @@
-#include "../include/kvdb.hpp"
+#include "../include/kvdb.cpp"
 #include <vector>
 #include <iostream>
 
@@ -13,18 +13,21 @@ int main() {
             std::string key;
             int value;
             std::cin >> key >> value;
-            db.Insert(key, value);
+            db.insert(key, value);
         }
         else if (op == "delete") {
             std::string key;
             int value;
             std::cin >> key >> value;
-            db.Del(key, value);
+            db.erase(key, value);
         }
         else if (op == "find") {
             std::string key;
             std::cin >> key;
-            std::vector<int> res = db.Find(key);
+            if (key == "23"){
+                int x = 2;
+            }
+            std::vector<int> res = db.find(key);
             for (int i : res) {
                 std::cout << i << ' ';
             }

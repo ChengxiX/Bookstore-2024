@@ -278,9 +278,6 @@ RandomDB<T, Comp, Attachment>::upper_bound(const T& t) {
     array content = get_body(h.body);
     auto bigger = 
     std::upper_bound(content.data, content.data + content.size, t, Comp_A());
-    if (bigger == content.data + content.size) {
-        return std::make_pair(h.next, 0);
-    }
     return std::make_pair(idx, bigger - content.data);
 }
 
@@ -294,9 +291,6 @@ std::pair<typename RandomDB<T, Comp, Attachment>::head_index, int> RandomDB<T, C
     array content = get_body(h.body);
     auto bigger = 
     std::lower_bound(content.data, content.data + content.size, t, Comp_A());
-    if (bigger == content.data + content.size) {
-        return std::make_pair(h.next, 0);
-    }
     return std::make_pair(idx, bigger - content.data);
 }
 
@@ -526,6 +520,7 @@ std::vector<typename RandomDB<T, Comp, Attachment>::T_A_pair> RandomDB<T, Comp, 
             h = get_head(idx);
             content = get_body(h.body);
             pos = 0;
+            continue;
         }
         res.push_back(content.data[pos]);
         pos ++;
