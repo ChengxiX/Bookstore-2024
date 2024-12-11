@@ -196,7 +196,7 @@ void RandomDB<T, Comp, Attachment>::insert(const T_A_pair& t_A) {
             if (!duplicate_allowed && back != content.data) {
                 auto p = back;
                 p --;
-                if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) { // == !(Comp()(t, *p) || Comp()(*p, t))
+                if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) {
                     throw DuplicateException();
                 }
             }

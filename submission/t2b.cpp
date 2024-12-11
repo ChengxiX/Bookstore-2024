@@ -262,7 +262,7 @@ class RandomDB {
     using arr_index = int;
     constexpr static const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
     constexpr static const int sizeofA = (binable<Attachment>) ? Attachment::bin_size() : sizeof(Attachment);
-    static const int block_size = 24576;
+    static const int block_size = 65536; // sweet point
 public:
     struct T_A_pair {
         T first;
@@ -533,7 +533,7 @@ void RandomDB<T, Comp, Attachment>::insert(const T_A_pair& t_A) {
             if (!duplicate_allowed && back != content.data) {
                 auto p = back;
                 p --;
-                if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) { // == !(Comp()(t, *p) || Comp()(*p, t))
+                if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) {
                     throw DuplicateException();
                 }
             }

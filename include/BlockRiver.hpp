@@ -16,12 +16,19 @@ private:
     /* your code here */
     fstream file;
     string file_name;
-    static const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);;
+    static constexpr const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);;
 public:
     struct BiggerThanABlock : std::exception {};
-    BlockRiver() = default;
+    BlockRiver() {
+        if constexpr (sizeofT > block_size) {
+            throw BiggerThanABlock();
+        }
+    }
     
     BlockRiver(const string& file_name) {
+        if constexpr (sizeofT > block_size) {
+            throw BiggerThanABlock();
+        }
         this->bind(file_name);
     }
 

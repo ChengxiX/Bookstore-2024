@@ -70,7 +70,7 @@ public:
     //位置索引index可以取为对象写入的起始位置
     int write(const T &t) {
         /* your code here */
-        file.seekp(0,std::ios::end);
+        file.seekp(0, std::ios::end);
         int index = file.tellp();
         if constexpr (binable<T>) {
             char* data = t.to_bin();
