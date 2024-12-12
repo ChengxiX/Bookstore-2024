@@ -16,7 +16,15 @@ private:
     struct InfoOverflow : std::exception {};
     fstream file;
     string file_name;
-    static const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);
+    constexpr static const int sizeofT_() {
+        if constexpr (binable<T>) {
+            return T::bin_size();
+        }
+        else {
+            return sizeof(T);
+        }
+    }
+    static constexpr const int sizeofT = sizeofT_();
 public:
     MemoryRiver() = default;
     

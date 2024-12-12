@@ -14,8 +14,24 @@ template<class T, class Comp=std::less<T>, class Attachment = Empty, int block_s
 class RandomDB {
     using head_index = int;
     using arr_index = int;
-    constexpr static const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
-    constexpr static const int sizeofA = (binable<Attachment>) ? Attachment::bin_size() : sizeof(Attachment);
+    constexpr static const int sizeofT_() {
+        if constexpr (binable<T>) {
+            return T::bin_size();
+        }
+        else {
+            return sizeof(T);
+        }
+    }
+    static constexpr const int sizeofT = sizeofT_();
+    constexpr static const int sizeofA_() {
+        if constexpr (binable<T>) {
+            return Attachment::bin_size();
+        }
+        else {
+            return sizeof(T);
+        }
+    }
+    static constexpr const int sizeofA = sizeofT_();
 public:
     struct T_A_pair {
         T first;

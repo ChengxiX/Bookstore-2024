@@ -352,7 +352,7 @@ char* RandomDB<T, Comp, Attachment, block_size>::head::to_bin() {
     }
     else {
         char* bin = new char[bin_size()];
-        std::copy(reinterpret_cast<char*>(this), reinterpret_cast<char*>(this) + to_bin(), bin);
+        std::copy(reinterpret_cast<char*>(this), reinterpret_cast<char*>(this) + bin_size(), bin);
         return bin;
     }
 }
@@ -508,6 +508,7 @@ template<class T, class Comp, class Attachment, int block_size>
 std::vector<typename RandomDB<T, Comp, Attachment, block_size>::T_A_pair> RandomDB<T, Comp, Attachment, block_size>::find(const T& t) {
     auto [idx_l, pos_l] = lower_bound(t);
     auto [idx_r, pos_r] = upper_bound(t);
+    return range(idx_l, pos_l, idx_r, pos_r);
 }
 
 template<class T, class Comp, class Attachment, int block_size>

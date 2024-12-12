@@ -81,9 +81,9 @@ void SeqDB<T, block_size>::push_back(T &t) {
         }
     }
     else {
-        array arr = river.read(idx * array_size);
+        array arr;
+        river.read(arr, idx * array_size);
         arr.data[size % array_size] = t;
-        arr.size++;
         river.update(arr, idx);
     }
     size++;

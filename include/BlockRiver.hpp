@@ -18,8 +18,16 @@ private:
     struct InfoOverflow : std::exception {};
     fstream file;
     string file_name;
-    static constexpr const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
-    static_assert(sizeofT < block_size);
+    constexpr static const int sizeofT_() {
+        if constexpr (binable<T>) {
+            return T::bin_size();
+        }
+        else {
+            return sizeof(T);
+        }
+    }
+    static constexpr const int sizeofT = sizeofT_();
+    static_assert(sizeofT <= block_size);
     unsigned int empty_tail_count = 0;
 public:
     struct BiggerThanABlock : std::exception {};
