@@ -96,7 +96,7 @@ void SeqDB<T, block_size>::push_back(T &t) {
         array arr;
         river.read(arr, idx * block_size);
         arr.data[len_ % array_size] = t;
-        river.update(arr, idx);
+        river.update(arr, idx * block_size);
     }
     len_++;
     river.write_info(len_, 4);
@@ -119,7 +119,7 @@ void SeqDB<T, block_size>::push_back(const T &t) {
         array arr;
         river.read(arr, idx * block_size);
         arr.data[len_ % array_size] = t;
-        river.update(arr, idx);
+        river.update(arr, idx * block_size);
     }
     len_++;
     river.write_info(len_, 4);
@@ -130,10 +130,10 @@ void SeqDB<T, block_size>::resize(int size) {
     if (size < 0) {
         throw std::out_of_range("size out of range");
     }
-    int idx = len_ / array_size + 1;
+    int idx = (len_ + array_size - 1) / array_size; // 收缩时向上取整，再减一，再加一
     len_ = size;
     river.write_info(len_, 4);
-    int new_idx = len_ / array_size + 1;
+    int new_idx =  (len_ + array_size - 1) / array_size;
     if (idx <= new_idx) {
         return;
     }
@@ -142,25 +142,25 @@ void SeqDB<T, block_size>::resize(int size) {
 }
 
 template<class T, int block_size>
-void SeqDB<T, block_size>::update(T &t, const index index) {
+void SeqDB<T, block_size>::update(T &t, const int index) {
     int idx = index / array_size + 1;
     array arr;
     river.read(arr, idx * block_size);
     arr.data[index % array_size] = t;
-    river.update(arr, idx);
+    river.update(arr, idx * block_size);
 }
 
 template<class T, int block_size>
-void SeqDB<T, block_size>::update(const T &t, const index index) {
+void SeqDB<T, block_size>::update(const T &t, const int index) {
     int idx = index / array_size + 1;
     array arr;
     river.read(arr, idx * block_size);
     arr.data[index % array_size] = t;
-    river.update(arr, idx);
+    river.update(arr, idx * block_size);
 }
 
 template<class T, int block_size>
-T SeqDB<T, block_size>::operator[](const index index) {
+T SeqDB<T, block_size>::operator[](const int index) {
     int idx = index / array_size + 1;
     array arr;
     river.read(arr , idx * block_size);
@@ -168,7 +168,7 @@ T SeqDB<T, block_size>::operator[](const index index) {
 }
 
 template<class T, int block_size>
-T SeqDB<T, block_size>::at(const index index) {
+T SeqDB<T, block_size>::at(const int index) {
     if (index >= len_) {
         throw std::out_of_range("index out of range");
     }
@@ -176,10 +176,13 @@ T SeqDB<T, block_size>::at(const index index) {
 }
 
 template<class T, int block_size>
-std::vector<T> SeqDB<T, block_size>::range(index l, index r) {
+std::vector<T> SeqDB<T, block_size>::range(int l, int r) {
+    if (l < 0 || r > len_ || l > r) {
+        throw std::out_of_range("range out of range");
+    }
     std::vector<T> res;
-    int l_idx = l / array_size;
-    int r_idx = r / array_size;
+    int l_idx = l / array_size + 1;
+    int r_idx = r / array_size + 1;
     if (l_idx == r_idx) {
         array arr;
         river.read(arr, l_idx * block_size);
@@ -209,5 +212,8 @@ std::vector<T> SeqDB<T, block_size>::range(index l, index r) {
 
 template<class T, int block_size>
 void SeqDB<T, block_size>::pop() {
+    if (len_ == 0) {
+        throw std::out_of_range("pop from empty SeqDB");
+    }
     resize(len_ - 1);
 }

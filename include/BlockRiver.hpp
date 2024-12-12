@@ -89,6 +89,7 @@ public:
             empty_tail_count--;
         }
         int init = file.tellp();
+        if (init == -1) {throw std::exception();}
         if constexpr (binable<T>) {
             char* data = t.to_bin();
             file.seekp(init + block_size - 1);

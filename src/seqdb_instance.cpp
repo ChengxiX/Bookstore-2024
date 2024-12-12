@@ -2,7 +2,6 @@
 #include <iostream>
 
 int main () {
-    std::cout << binable<int> << std::endl;
     SeqDB<long long> db("1");
     std::string op;
     while (std::cin >> op) {
@@ -35,5 +34,6 @@ int main () {
             }
             std::cout << std::endl;
         }
+        // std::cout << ": " << db.size() << std::endl;
     }
 }

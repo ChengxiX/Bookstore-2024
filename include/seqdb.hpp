@@ -10,7 +10,6 @@ template<class T, int block_size = 4096>
 class SeqDB {
     class DBFileNotMatchException : std::exception {};
     struct FileBroken : std::exception {};
-    using index = int;
     constexpr static const int sizeofT_() {
         if constexpr (binable<T>) {
             return T::bin_size();
@@ -36,11 +35,11 @@ public:
     void push_back(T &t);
     void push_back(const T &t);
     void resize(int size);
-    void update(T &t, const index index);
-    void update(const T &t, const index index);
-    T operator[](const index index);
-    T at(const index index);
-    std::vector<T> range(index l, index r);
+    void update(T &t, const int index);
+    void update(const T &t, const int index);
+    T operator[](const int index);
+    T at(const int index);
+    std::vector<T> range(int l, int r);
     void pop();
 };
 
