@@ -59,7 +59,6 @@ public:
         if (FN != "") file_name = FN;
         if (file.is_open()) file.close();
         file.open(file_name, std::ios::out | std::ios::binary);
-        int tmp = 0;
         file.seekp(std::ios::beg);
         for (int i = 0; i < block_size; ++i) // 留出一个头块来存info
             file.put(0);

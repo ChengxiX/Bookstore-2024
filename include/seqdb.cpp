@@ -9,7 +9,8 @@ SeqDB<T, block_size>::SeqDB(std::string name, int db_id, std::string path) : riv
         river.initialise(path + name + ".seqdb");
         river.write_info(db_id, 1);
         river.write_info(sizeofT, 2);
-        // river.write_info(size, 3); 默认会写的
+        river.write_info(block_size, 3);
+        // river.write_info(size, 4); 默认会写0的
     }
     else {
         river.bind(path + name + ".seqdb");
@@ -23,8 +24,19 @@ SeqDB<T, block_size>::SeqDB(std::string name, int db_id, std::string path) : riv
         if (sizeofT_ != sizeofT) {
             throw DBFileNotMatchException();
         }
-        river.get_info(size, 3);
+        int block_size_;
+        river.get_info(block_size_, 3);
+        if (block_size_ != block_size) {
+            throw DBFileNotMatchException();
+        }
+        river.get_info(len_, 4);
     }
+}
+
+template<class T, int block_size>
+SeqDB<T, block_size>::~SeqDB() {
+    river.write_info(len_, 4);
+    river.close();
 }
 
 template<class T, int block_size>
@@ -42,7 +54,7 @@ char* SeqDB<T, block_size>::array::to_bin() {
     else {
         char* bin = new char[bin_size()];
         for (int i = 0; i < array_size; ++i) {
-            std::copy(reinterpret_cast<char*>(&data[i]), reinterpret_cast<char*>(&data[i]) + sizeofT, data + i * sizeofT);
+            std::copy(reinterpret_cast<char*>(&data[i]), reinterpret_cast<char*>(&data[i]) + sizeofT, bin + i * sizeofT);
         }
         return bin;
     }
@@ -69,25 +81,48 @@ constexpr const int SeqDB<T, block_size>::array::bin_size() {
 
 template<class T, int block_size>
 void SeqDB<T, block_size>::push_back(T &t) {
-    int idx = size / array_size + 1; // 0号是block_river用来存元数据的
-    if (size % array_size == 0) {
+    int idx = len_ / array_size + 1; // 0号是block_river用来存元数据的
+    if (len_ % array_size == 0) {
         array arr{{t}};
         int new_idx = river.write(arr);
-        if (new_idx % array_size != 0) {
+        if (new_idx % block_size != 0) {
             throw FileBroken();
         }
-        if (new_idx / array_size - 1 != idx) {
+        if (new_idx / block_size != idx) {
             throw FileBroken();
         }
     }
     else {
         array arr;
-        river.read(arr, idx * array_size);
-        arr.data[size % array_size] = t;
+        river.read(arr, idx * block_size);
+        arr.data[len_ % array_size] = t;
         river.update(arr, idx);
     }
-    size++;
-    river.write_info(size, 3);
+    len_++;
+    river.write_info(len_, 4);
+}
+
+template<class T, int block_size>
+void SeqDB<T, block_size>::push_back(const T &t) {
+    int idx = len_ / array_size + 1; // 0号是block_river用来存元数据的
+    if (len_ % array_size == 0) {
+        array arr{{t}};
+        int new_idx = river.write(arr);
+        if (new_idx % block_size != 0) {
+            throw FileBroken();
+        }
+        if (new_idx / block_size != idx) {
+            throw FileBroken();
+        }
+    }
+    else {
+        array arr;
+        river.read(arr, idx * block_size);
+        arr.data[len_ % array_size] = t;
+        river.update(arr, idx);
+    }
+    len_++;
+    river.write_info(len_, 4);
 }
 
 template<class T, int block_size>
@@ -95,11 +130,11 @@ void SeqDB<T, block_size>::resize(int size) {
     if (size < 0) {
         throw std::out_of_range("size out of range");
     }
-    int idx = this->size / array_size + 1;
-    this->size = size;
-    river.write_info(size, 3);
-    int new_idx = size / array_size + 1;
-    if (idx == new_idx) {
+    int idx = len_ / array_size + 1;
+    len_ = size;
+    river.write_info(len_, 4);
+    int new_idx = len_ / array_size + 1;
+    if (idx <= new_idx) {
         return;
     }
     // 收缩
@@ -109,7 +144,17 @@ void SeqDB<T, block_size>::resize(int size) {
 template<class T, int block_size>
 void SeqDB<T, block_size>::update(T &t, const index index) {
     int idx = index / array_size + 1;
-    array arr = river.read(idx * array_size);
+    array arr;
+    river.read(arr, idx * block_size);
+    arr.data[index % array_size] = t;
+    river.update(arr, idx);
+}
+
+template<class T, int block_size>
+void SeqDB<T, block_size>::update(const T &t, const index index) {
+    int idx = index / array_size + 1;
+    array arr;
+    river.read(arr, idx * block_size);
     arr.data[index % array_size] = t;
     river.update(arr, idx);
 }
@@ -117,21 +162,17 @@ void SeqDB<T, block_size>::update(T &t, const index index) {
 template<class T, int block_size>
 T SeqDB<T, block_size>::operator[](const index index) {
     int idx = index / array_size + 1;
-    array arr = river.read(idx * array_size);
+    array arr;
+    river.read(arr , idx * block_size);
     return arr.data[index % array_size];
 }
 
 template<class T, int block_size>
 T SeqDB<T, block_size>::at(const index index) {
-    if (index >= size) {
+    if (index >= len_) {
         throw std::out_of_range("index out of range");
     }
     return operator[](index);
-}
-
-template<class T, int block_size>
-void SeqDB<T, block_size>::read(T &t, const index index) {
-    t = operator[](index);
 }
 
 template<class T, int block_size>
@@ -140,30 +181,33 @@ std::vector<T> SeqDB<T, block_size>::range(index l, index r) {
     int l_idx = l / array_size;
     int r_idx = r / array_size;
     if (l_idx == r_idx) {
-        array arr = river.read(l_idx * array_size);
+        array arr;
+        river.read(arr, l_idx * block_size);
         for (int i = l % array_size; i < r % array_size; ++i) {
             res.push_back(arr.data[i]);
         }
     }
     else {
-        array arr = river.read(l_idx * array_size);
+        array arr;
+        river.read(arr, l_idx * block_size);
         for (int i = l % array_size; i < array_size; ++i) {
             res.push_back(arr.data[i]);
         }
         for (int i = l_idx + 1; i < r_idx; ++i) {
-            arr = river.read(i * array_size);
+            river.read(arr, i * block_size);
             for (int j = 0; j < array_size; ++j) {
                 res.push_back(arr.data[j]);
             }
         }
-        arr = river.read(r_idx * array_size);
+        river.read(arr,r_idx * block_size);
         for (int i = 0; i < r % array_size; ++i) {
             res.push_back(arr.data[i]);
         }
     }
+    return res;
 }
 
 template<class T, int block_size>
 void SeqDB<T, block_size>::pop() {
-    resize(size - 1);
+    resize(len_ - 1);
 }

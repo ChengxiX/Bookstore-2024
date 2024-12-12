@@ -28,15 +28,18 @@ class SeqDB {
         constexpr static const int bin_size();
     };
     BlockRiver<array, block_size> river;
+    int len_ = 0;
 public:
-    int size = 0;
+    int size() {return len_;}
     SeqDB(std::string dbname, int db_id = 0, std::string path = "");
+    ~SeqDB();
     void push_back(T &t);
+    void push_back(const T &t);
     void resize(int size);
     void update(T &t, const index index);
+    void update(const T &t, const index index);
     T operator[](const index index);
     T at(const index index);
-    void read(T &t, const index index);
     std::vector<T> range(index l, index r);
     void pop();
 };
