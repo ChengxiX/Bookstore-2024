@@ -16,21 +16,21 @@ class RandomDB<T, Comp, Attachment, block_size>::DuplicateException : std::excep
 
 template<class T, class Comp, class Attachment, int block_size>
 RandomDB<T, Comp, Attachment, block_size>::RandomDB(std::string dbname, int db_id, std::string path, bool duplicate_allowed) : db_id(db_id), duplicate_allowed(duplicate_allowed) {
-    if (!std::filesystem::exists(path + dbname + ".head")) {
-        head_river.initialise(path + dbname + ".head");
+    if (!std::filesystem::exists(path + dbname + "_h.randb")) {
+        head_river.initialise(path + dbname + "_h.randb");
         head_river.write_info(db_id, 1);
         head_river.write_info(sizeof(T) , 2);
         head_river.write_info(head_begin, 3);
         head_river.write_info(head_end, 4);
         head_river.write_info(duplicate_allowed, 5);
-        body_river.initialise(path + dbname + ".data");
+        body_river.initialise(path + dbname + "_d.randb");
     }
     else {
-        if (!std::filesystem::exists(path + dbname + ".data")) {
+        if (!std::filesystem::exists(path + dbname + "_d.randb")) {
             throw MissingFileException();
         }
-        head_river.bind(path + dbname + ".head");
-        body_river.bind(path + dbname + ".data");
+        head_river.bind(path + dbname + "_h.randb");
+        body_river.bind(path + dbname + "_d.randb");
         int id;
         head_river.get_info(id, 1);
         if (db_id != 0 && id != 0 && db_id != id) {
