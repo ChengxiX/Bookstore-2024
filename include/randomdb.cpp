@@ -463,7 +463,7 @@ void RandomDB<T, Comp, Attachment, block_size>::T_A_pair::from_bin(char* bin) {
             second.from_bin(ptr);
         }
         else {
-            std::copy(ptr, ptr +  sizeofA, reinterpret_cast<char*>(&(this->second)));
+            std::copy(ptr, ptr + sizeofA, reinterpret_cast<char*>(&(this->second)));
         }
     }
 }

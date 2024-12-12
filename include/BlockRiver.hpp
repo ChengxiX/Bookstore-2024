@@ -18,7 +18,7 @@ private:
     struct InfoOverflow : std::exception {};
     fstream file;
     string file_name;
-    static constexpr const int sizeofT = binable<T> ? T::bin_size() : sizeof(T);
+    static constexpr const int sizeofT = (binable<T>) ? T::bin_size() : sizeof(T);
     static_assert(sizeofT < block_size);
     unsigned int empty_tail_count = 0;
 public:

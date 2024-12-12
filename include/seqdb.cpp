@@ -103,6 +103,7 @@ void SeqDB<T, block_size>::resize(int size) {
         return;
     }
     // 收缩
+    river.Delete(idx - new_idx);
 }
 
 template<class T, int block_size>
