@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <exception>
 #include <type_traits>
+#include <utility>
 
 template<class T, class Comp, class Attachment, int block_size>
 class RandomDB<T, Comp, Attachment, block_size>::MissingFileException : std::exception {};
@@ -316,6 +317,22 @@ bool RandomDB<T, Comp, Attachment, block_size>::exist(const T& t) {
     head h = get_head(idx);
     array content = get_body(h.body);
     return std::binary_search(content.data, content.data + content.size, t, Comp_A());
+}
+
+template<class T, class Comp, class Attachment, int block_size>
+std::pair<bool, typename RandomDB<T, Comp, Attachment, block_size>::T_A_pair> RandomDB<T, Comp, Attachment, block_size>::get(const T& t) {
+    head_index idx = locate(t);
+    if (idx == -1) {
+        return std::make_pair(false, T_A_pair{});
+    }
+    head h = get_head(idx);
+    array content = get_body(h.body);
+    auto bigger = std::upper_bound(content.data, content.data + content.size, t, Comp_A());
+    bigger --;
+    if (Comp_A()(t, *bigger) || Comp_A()(*bigger, t)) {
+        return std::make_pair(false, T_A_pair{});
+    }
+    return std::make_pair(true, *bigger);
 }
 
 template<class T, class Comp, class Attachment, int block_size>

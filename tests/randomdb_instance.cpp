@@ -34,10 +34,10 @@ int integer() {
             std::cin >> value;
             db.erase(value);
         }
-        else if (op == "exist") {
+        else if (op == "get") {
             int value;
             std::cin >> value;
-            std::cout << db.exist(value) <<std::endl;
+            std::cout << db.get(value).second.first <<std::endl;
         }
     }
     return 0;
@@ -120,5 +120,5 @@ int kv() {
 }
 
 int main() {
-    return kv();
+    return integer();
 }

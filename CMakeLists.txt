@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Add the executable
-add_executable(Bookstore src/main.cpp include/ramdomdb.cpp include/kvdb.cpp include/seqdb.cpp)
+add_executable(Bookstore src/main.cpp)
 
 # Include directories
 include_directories(include)

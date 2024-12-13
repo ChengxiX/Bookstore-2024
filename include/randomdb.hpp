@@ -5,6 +5,7 @@
 #include "BlockRiver.hpp"
 #include <functional>
 #include <string>
+#include <utility>
 #include <vector>
 #include "binable.hpp"
 
@@ -90,6 +91,7 @@ public:
     class DuplicateException;
     std::vector<T_A_pair> range(head_index lh, int lp, head_index rh, int rp);
     void vacuum();
+    std::pair<bool, T_A_pair> get(const T& t);
 private:
     MemoryRiver<head, 16> head_river;
     BlockRiver<array, block_size> body_river;
