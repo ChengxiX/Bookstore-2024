@@ -49,12 +49,13 @@ namespace Book {
     KVDB<int, std::less<int>, max_str_len> title2id("book_title_index", 4, "data/", false);
     KVDB<int, std::less<int>, max_str_len> author2id("book_author_index", 5, "data/", false);
     KVDB<int, std::less<int>, max_str_len> keyword2id("book_keyword_index", 6, "data/", false);
+    // 以 [ISBN] 字典升序依次输出
     std::vector<BookInfo> show_isbn(std::string isbn);
     std::vector<BookInfo> show_title(std::string title);
     std::vector<BookInfo> show_author(std::string author);
     std::vector<BookInfo> show_keyword(std::string keyword);
-    void select(std::string isbn);
-    bool modify(std::string current_selected_isbn, std::string isbn = "", std::string title = "", std::string author = "", std::string keyword = "", Price_T price = "");
+    int select(std::string isbn); // 返回书的id
+    bool modify(int book_id, std::string isbn = "", std::string title = "", std::string author = "", std::string keyword = "", Price_T price = "");
 }
 
 namespace Deal {
@@ -71,8 +72,8 @@ namespace Deal {
     };
     SeqDB<DealInfo> db;
     Book::Price_T buy(std::string isbn, int quantity);
-    Book::Price_T import(std::string current_selected_isbn, int quantity, Book::Price_T total_cost);
-    Book::Price_T show(int count = -1);
+    Book::Price_T import(int book_id, int quantity, Book::Price_T total_cost);
+    std::string show_finance(int count = -1);
     void report_finance();  // 不一定是void，待定
     void report_employee(); // 不一定是void，待定
     void log(); // 不一定是void，待定
