@@ -24,14 +24,14 @@ class RandomDB {
     }
     static constexpr const int sizeofT = sizeofT_();
     constexpr static const int sizeofA_() {
-        if constexpr (binable<T>) {
+        if constexpr (binable<Attachment>) {
             return Attachment::bin_size();
         }
         else {
             return sizeof(T);
         }
     }
-    static constexpr const int sizeofA = sizeofT_();
+    static constexpr const int sizeofA = sizeofA_();
 public:
     struct T_A_pair {
         T first;
