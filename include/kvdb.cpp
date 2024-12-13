@@ -1,3 +1,6 @@
+#ifndef KVDB_
+#define KVDB_
+
 #include "kvdb.hpp"
 #include "binable.hpp"
 #include <cstring>
@@ -84,3 +87,4 @@ std::vector<std::pair<typename KVDB<VT, Comp, key_name_len>::key_type, VT>> KVDB
     return res;
 }
 
+#endif

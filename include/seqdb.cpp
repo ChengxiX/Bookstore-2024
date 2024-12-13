@@ -1,3 +1,5 @@
+#ifndef SEQDB_
+#define SEQDB_
 #include "seqdb.hpp"
 #include "binable.hpp"
 #include <string>
@@ -217,3 +219,5 @@ void SeqDB<T, block_size>::pop() {
     }
     resize(len_ - 1);
 }
+
+#endif

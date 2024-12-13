@@ -1,3 +1,6 @@
+#ifndef RANDOMDB_
+#define RANDOMDB_
+
 #include "randomdb.hpp"
 #include "binable.hpp"
 #include <filesystem>
@@ -530,3 +533,5 @@ std::vector<typename RandomDB<T, Comp, Attachment, block_size>::T_A_pair> Random
     }
     return res;
 }
+
+#endif
