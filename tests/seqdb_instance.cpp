@@ -1,4 +1,4 @@
-#include "../include/seqdb.cpp"
+#include "seqdb.cpp"
 #include <iostream>
 
 int main () {

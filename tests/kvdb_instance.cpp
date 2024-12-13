@@ -1,4 +1,4 @@
-#include "../include/kvdb.cpp"
+#include "kvdb.cpp"
 #include <vector>
 #include <iostream>
 

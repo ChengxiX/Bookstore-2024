@@ -1,4 +1,4 @@
-#include "../include/randomdb.cpp"
+#include "randomdb.cpp"
 #include <array>
 #include <functional>
 #include <iostream>

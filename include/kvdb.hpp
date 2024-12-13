@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 #include <exception>
-#include "randomdb.hpp"
+#include "randomdb.cpp"
 
 template<class VT, class Comp = std::less<VT>, int key_name_len = 64>
 class KVDB {

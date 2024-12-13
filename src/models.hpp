@@ -1,8 +1,10 @@
-#include "randomdb.hpp"
-#include "seqdb.hpp"
-#include "kvdb.hpp"
+#include "randomdb.cpp"
+#include "seqdb.cpp"
+#include "kvdb.cpp"
 #include <string>
 #include <vector>
+
+constexpr static const int INSTANCE_ID = 1;
 
 struct textcmp {
     bool operator()(const char* a, const char* b) const {
@@ -20,7 +22,7 @@ namespace User {
         User::UserId staff;
         int Privilege;
     };
-    RandomDB<UserId, textcmp, info> db("user", 1, "data/", false);
+    RandomDB<UserId, textcmp, info> db("user", INSTANCE_ID, "data/", false);
     bool su(std::string id, std::string password = "", int privilege = 0);
     bool logout();
     bool passwd(std::string id, std::string new_password, std::string old_password = "");
@@ -44,11 +46,11 @@ namespace Book {
         int Stock;
         Price_T price; 
     };
-    SeqDB<class BookInfo> db("book", 2, "data/");
-    RandomDB<ISBN_T, textcmp, int> isbn2id("book_isbn_index", 3, "data/", false);
-    KVDB<int, std::less<int>, max_str_len> title2id("book_title_index", 4, "data/", false);
-    KVDB<int, std::less<int>, max_str_len> author2id("book_author_index", 5, "data/", false);
-    KVDB<int, std::less<int>, max_str_len> keyword2id("book_keyword_index", 6, "data/", false);
+    SeqDB<class BookInfo> db("book", INSTANCE_ID, "data/");
+    RandomDB<ISBN_T, textcmp, int> isbn2id("book_isbn_index", INSTANCE_ID, "data/", false);
+    KVDB<int, std::less<int>, max_str_len> title2id("book_title_index", INSTANCE_ID, "data/", false);
+    KVDB<int, std::less<int>, max_str_len> author2id("book_author_index", INSTANCE_ID, "data/", false);
+    KVDB<int, std::less<int>, max_str_len> keyword2id("book_keyword_index", INSTANCE_ID, "data/", false);
     // 以 [ISBN] 字典升序依次输出
     std::vector<BookInfo> show_isbn(std::string isbn);
     std::vector<BookInfo> show_title(std::string title);
@@ -70,7 +72,7 @@ namespace Deal {
         int quantity;
         User::UserId staff;
     };
-    SeqDB<DealInfo> db;
+    SeqDB<DealInfo> db("deal", INSTANCE_ID, "data/");
     Book::Price_T buy(std::string isbn, int quantity);
     Book::Price_T import(int book_id, int quantity, Book::Price_T total_cost);
     std::string show_finance(int count = -1);
