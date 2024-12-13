@@ -142,7 +142,7 @@ void RandomDB<T, Comp, Attachment, block_size>::insert(const T_A_pair& t_A) {
     array content = get_body(h.body);
     if (content.size < array_size) {
         auto back = std::upper_bound(content.data, content.data + content.size, t_A, Comp_A());
-        if (!duplicate_allowed && back != content.data) {
+        if ((!duplicate_allowed) && back != content.data) {
             auto p = back;
             p --;
             if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) {
@@ -179,7 +179,7 @@ void RandomDB<T, Comp, Attachment, block_size>::insert(const T_A_pair& t_A) {
         head new_head = head{new_arr.data[0].first, new_arr.data[new_arr.size - 1].first, h.next};
         if (!Comp()(t_A.first, new_head.begin)) {
             auto back = std::upper_bound(new_arr.data, new_arr.data + new_arr.size, t_A, Comp_A());
-            if (!duplicate_allowed && back != content.data) {
+            if ((!duplicate_allowed) && back != content.data) {
                 auto p = back;
                 p --;
                 if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) {
@@ -196,7 +196,7 @@ void RandomDB<T, Comp, Attachment, block_size>::insert(const T_A_pair& t_A) {
         }
         else {
             auto back = std::upper_bound(content.data, content.data + content.size, t_A, Comp_A());
-            if (!duplicate_allowed && back != content.data) {
+            if ((!duplicate_allowed) && back != content.data) {
                 auto p = back;
                 p --;
                 if (!(Comp()(t_A.first, (*p).first) || Comp()((*p).first, t_A.first))) {
@@ -425,18 +425,7 @@ constexpr const int RandomDB<T, Comp, Attachment, block_size>::T_A_pair::bin_siz
         }
     }
     else {
-        if constexpr (binable<T> && binable<Attachment>) {
-            return T::bin_size() + Attachment::bin_size();
-        }
-        else if constexpr (binable<T> && (!binable<Attachment>)) {
-            return T::bin_size() + sizeof(Attachment);
-        }
-        else if constexpr ((!binable<T>) && binable<Attachment>) {
-            return sizeof(T) + Attachment::bin_size();
-        }
-        else {
-            return sizeof(T) + sizeof(Attachment);
-        }
+        return sizeofA + sizeofT;
     }
 }
 

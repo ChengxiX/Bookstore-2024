@@ -1,4 +1,0 @@
-rm db2.*
-rm db
-./t2 < 2.in > 2.out
-./kvdb_instance < 2.in > 2.tst
