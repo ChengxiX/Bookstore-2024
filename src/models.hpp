@@ -13,22 +13,30 @@
 constexpr static const int INSTANCE_ID = 1;
 
 template<int max>
-struct binstring : std::string {
+struct binstring {
+    std::string str;
     constexpr const static int max_size = max;
     char* to_bin();
     void from_bin(char* bin);
     constexpr static const int bin_size();
+    binstring(const std::string& s) : str(s) {}
+    binstring() = default;
+    binstring(const char* s) : str(s) {}
+    const char* c_str() const {return str.c_str();}
+    operator std::string() const {
+        return str;
+    }
 };
 
 template<int max_size>
 void binstring<max_size>::from_bin(char* bin) {
-    this(bin, bin + max_size);
+    str.assign(bin, max_size);
 }
 
 template<int max_size>
 char* binstring<max_size>::to_bin() {
     char* bin = new char[max_size];
-    std::copy(c_str(), c_str() + max_size, bin);
+    std::copy(str.c_str(), str.c_str() + max_size, bin);
     return bin;
 }
 
@@ -37,9 +45,10 @@ constexpr const int binstring<max_size>::bin_size() {
     return max_size;
 }
 
+template<int max_len>
 struct textcmp {
-    bool operator()(const char* a, const char* b) const {
-        return strcmp(a, b) < 0;
+    bool operator()(const binstring<max_len> & a, const binstring<max_len> & b) const {
+        return strcmp(a.c_str(), b.c_str()) < 0;
     }
 };
 
@@ -51,8 +60,33 @@ namespace User {
         binstring<max_str_len> Username;
         binstring<max_str_len> Password;
         int Privilege;
+        char* to_bin() {
+            char* bin = new char[bin_size()];
+            char* ptr = bin;
+            std::copy(id.c_str(), id.c_str() + binstring<max_str_len>::bin_size(), ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            std::copy(Username.c_str(), Username.c_str() + binstring<max_str_len>::bin_size(), ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            std::copy(Password.c_str(), Password.c_str() + binstring<max_str_len>::bin_size(), ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            std::copy(reinterpret_cast<char*>(&Privilege), reinterpret_cast<char*>(&Privilege) + sizeof(int), ptr);
+            return bin;
+        }
+        void from_bin(char* bin) {
+            char* ptr = bin;
+            id.from_bin(ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            Username.from_bin(ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            Password.from_bin(ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            std::copy(ptr, ptr + sizeof(int), reinterpret_cast<char*>(&Privilege));
+        }
+        constexpr static const int bin_size() {
+            return binstring<max_str_len>::bin_size() * 3 + sizeof(int);
+        }
     };
-    RandomDB<UserId, textcmp, UserInfo> db("user", INSTANCE_ID, "data/", false);
+    RandomDB<UserId, textcmp<max_str_len>, UserInfo> db;
     bool su(const std::string &id, const std::string &password = "", int privilege = 0);
     bool passwd(const std::string &id, const std::string &new_password, const std::string & staff, int privilege, const std::string &old_password = "");
     bool useradd(const std::string &id, const std::string &password, const std::string &username, int privilege, int current_pri, const std::string &staff);
@@ -76,13 +110,49 @@ namespace Book {
         binstring<max_str_len> Author;
         binstring<max_str_len> Keyword; // keywords
         int Stock;
-        Price_T price; 
+        Price_T price;
+        char* to_bin() {
+            char* bin = new char[bin_size()];
+            char* ptr = bin;
+            std::copy(reinterpret_cast<char*>(&id), reinterpret_cast<char*>(&id) + sizeof(int), ptr);
+            ptr += sizeof(int);
+            std::copy(ISBN.c_str(), ISBN.c_str() + binstring<max_isbn_len>::bin_size(), ptr);
+            ptr += binstring<max_isbn_len>::bin_size();
+            std::copy(Title.c_str(), Title.c_str() + binstring<max_str_len>::bin_size(), ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            std::copy(Author.c_str(), Author.c_str() + binstring<max_str_len>::bin_size(), ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            std::copy(Keyword.c_str(), Keyword.c_str() + binstring<max_str_len>::bin_size(), ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            std::copy(reinterpret_cast<char*>(&Stock), reinterpret_cast<char*>(&Stock) + sizeof(int), ptr);
+            ptr += sizeof(int);
+            std::copy(reinterpret_cast<char*>(&price), reinterpret_cast<char*>(&price) + sizeof(Price_T), ptr);
+            return bin;
+        }
+        void from_bin(char* bin) {
+            char* ptr = bin;
+            std::copy(ptr, ptr + sizeof(int), reinterpret_cast<char*>(&id));
+            ptr += sizeof(int);
+            ISBN.from_bin(ptr);
+            ptr += binstring<max_isbn_len>::bin_size();
+            Title.from_bin(ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            Author.from_bin(ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            Keyword.from_bin(ptr);
+            ptr += binstring<max_str_len>::bin_size();
+            std::copy(ptr, ptr + sizeof(int), reinterpret_cast<char*>(&Stock));
+            ptr += sizeof(int);
+            std::copy(ptr, ptr + sizeof(Price_T), reinterpret_cast<char*>(&price));
+        }
+        constexpr static const int bin_size() {
+            return sizeof(int) + binstring<max_isbn_len>::bin_size() + binstring<max_str_len>::bin_size() * 3 + sizeof(int) + sizeof(Price_T);
+        }
     };
     bool check_isbn(const std::string &isbn);
     bool check_str(const std::string &str);
-    
     SeqDB<class BookInfo> db("book", INSTANCE_ID, "data/");
-    RandomDB<ISBN_T, textcmp, int> isbn2id("book_isbn_index", INSTANCE_ID, "data/", false);
+    RandomDB<ISBN_T, textcmp<max_isbn_len>, int> isbn2id("book_isbn_index", INSTANCE_ID, "data/", false);
     KVDB<int, std::less<int>, max_str_len> title2id("book_title_index", INSTANCE_ID, "data/", false);
     KVDB<int, std::less<int>, max_str_len> author2id("book_author_index", INSTANCE_ID, "data/", false);
     KVDB<int, std::less<int>, max_str_len> keyword2id("book_keyword_index", INSTANCE_ID, "data/", false);
@@ -138,6 +208,35 @@ namespace Log {
         binstring<User::max_str_len> user;
         int record_id;
         binstring<max_info_len> info;
+        constexpr static const int bin_size() {
+            return sizeof(int) + sizeof(OpType) + binstring<User::max_str_len>::bin_size() + sizeof(int) + binstring<max_info_len>::bin_size();
+        }
+        char* to_bin() {
+            char* bin = new char[bin_size()];
+            char* ptr = bin;
+            std::copy(reinterpret_cast<char*>(&id), reinterpret_cast<char*>(&id) + sizeof(int), ptr);
+            ptr += sizeof(int);
+            std::copy(reinterpret_cast<char*>(&type), reinterpret_cast<char*>(&type) + sizeof(OpType), ptr);
+            ptr += sizeof(OpType);
+            std::copy(user.c_str(), user.c_str() + binstring<User::max_str_len>::bin_size(), ptr);
+            ptr += binstring<User::max_str_len>::bin_size();
+            std::copy(reinterpret_cast<char*>(&record_id), reinterpret_cast<char*>(&record_id) + sizeof(int), ptr);
+            ptr += sizeof(int);
+            std::copy(info.c_str(), info.c_str() + binstring<max_info_len>::bin_size(), ptr);
+            return bin;
+        }
+        void from_bin(char* bin) {
+            char* ptr = bin;
+            std::copy(ptr, ptr + sizeof(int), reinterpret_cast<char*>(&id));
+            ptr += sizeof(int);
+            std::copy(ptr, ptr + sizeof(OpType), reinterpret_cast<char*>(&type));
+            ptr += sizeof(OpType);
+            user.from_bin(ptr);
+            ptr += binstring<User::max_str_len>::bin_size();
+            std::copy(ptr, ptr + sizeof(int), reinterpret_cast<char*>(&record_id));
+            ptr += sizeof(int);
+            info.from_bin(ptr);
+        }
     };
     SeqDB<LogInfo> db("log", INSTANCE_ID, "data/");
     KVDB<int, std::less<int>, User::max_str_len> index_db("op2log", INSTANCE_ID, "data/", false);

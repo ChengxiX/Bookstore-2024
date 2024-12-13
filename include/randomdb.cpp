@@ -19,7 +19,9 @@ template<class T, class Comp, class Attachment, int block_size>
 class RandomDB<T, Comp, Attachment, block_size>::DuplicateException : std::exception {};
 
 template<class T, class Comp, class Attachment, int block_size>
-RandomDB<T, Comp, Attachment, block_size>::RandomDB(std::string dbname, int db_id, std::string path, bool duplicate_allowed) : db_id(db_id), duplicate_allowed(duplicate_allowed) {
+bool RandomDB<T, Comp, Attachment, block_size>::init(std::string dbname, int db_id, std::string path, bool duplicate_allowed) {
+    this->db_id = db_id;
+    this->duplicate_allowed = duplicate_allowed;
     if (!std::filesystem::exists(path + dbname + "_h.randb")) {
         head_river.initialise(path + dbname + "_h.randb");
         head_river.write_info(db_id, 1);
@@ -27,7 +29,9 @@ RandomDB<T, Comp, Attachment, block_size>::RandomDB(std::string dbname, int db_i
         head_river.write_info(head_begin, 3);
         head_river.write_info(head_end, 4);
         head_river.write_info(duplicate_allowed, 5);
+        head_river.flush();
         body_river.initialise(path + dbname + "_d.randb");
+        return true;
     }
     else {
         if (!std::filesystem::exists(path + dbname + "_d.randb")) {
@@ -52,7 +56,13 @@ RandomDB<T, Comp, Attachment, block_size>::RandomDB(std::string dbname, int db_i
         }
         head_river.get_info(head_begin, 3);
         head_river.get_info(head_end, 4);
+        return false;
     }
+}
+
+template<class T, class Comp, class Attachment, int block_size>
+RandomDB<T, Comp, Attachment, block_size>::RandomDB(std::string dbname, int db_id, std::string path, bool duplicate_allowed) {
+    init(dbname, db_id, path, duplicate_allowed);
 }
 
 template<class T, class Comp, class Attachment, int block_size>
@@ -110,6 +120,7 @@ RandomDB<T, Comp, Attachment, block_size>::add_head(const T_A_pair& t, head_inde
         head_river.update(p, prev);
         head_end = p.next;
         head_river.write_info(head_end, 4);
+        flush();
         return p.next;
     }
     else {
@@ -118,6 +129,7 @@ RandomDB<T, Comp, Attachment, block_size>::add_head(const T_A_pair& t, head_inde
         head_end = head_begin;
         head_river.write_info(head_begin, 3);
         head_river.write_info(head_end, 4);
+        flush();
         return head_begin;
     }
 }
@@ -166,6 +178,7 @@ void RandomDB<T, Comp, Attachment, block_size>::insert(const T_A_pair& t_A) {
             head_river.update(h, idx);
         }
         body_river.update(content, h.body);
+        flush();
         return;
     }
     else {
@@ -227,6 +240,7 @@ void RandomDB<T, Comp, Attachment, block_size>::insert(const T_A_pair& t_A) {
         }
         body_river.update(content, h.body);
     }
+    flush();
 }
 
 template<class T, class Comp, class Attachment, int block_size>
@@ -278,6 +292,7 @@ bool RandomDB<T, Comp, Attachment, block_size>::erase(const T& t) {
     }
     if (update_head) {head_river.update(h, idx);}
     body_river.update(content, h.body);
+    flush();
     return true;
 }
 
@@ -327,7 +342,7 @@ std::pair<bool, typename RandomDB<T, Comp, Attachment, block_size>::T_A_pair> Ra
     }
     head h = get_head(idx);
     array content = get_body(h.body);
-    auto bigger = std::upper_bound(content.data, content.data + content.size, t, Comp_A());
+    T_A_pair* bigger = std::upper_bound(content.data, content.data + content.size, t, Comp_A());
     bigger --;
     if (Comp_A()(t, *bigger) || Comp_A()(*bigger, t)) {
         return std::make_pair(false, T_A_pair{});

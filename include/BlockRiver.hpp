@@ -139,6 +139,10 @@ public:
     void Delete(int count) {
         empty_tail_count += count;
     }
+
+    void flush() {
+        file.flush();
+    }
 };
 
 

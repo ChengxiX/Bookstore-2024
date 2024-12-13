@@ -3,6 +3,7 @@
 
 #include "kvdb.hpp"
 #include "binable.hpp"
+#include <climits>
 #include <cstring>
 #include <utility>
 
@@ -76,7 +77,7 @@ std::vector<std::pair<typename KVDB<VT, Comp, key_name_len>::key_type, VT>> KVDB
     std::vector<std::pair<key_type, VT>> res;
     p.value = 0;
     auto l = db.lower_bound(p);
-    p.value = 2147483647;
+    p.value = INT_MAX;
     auto r = db.upper_bound(p);
     auto call = db.range(l.first, l.second, r.first, r.second);
     res.resize(call.size());

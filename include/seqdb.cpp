@@ -13,6 +13,7 @@ SeqDB<T, block_size>::SeqDB(std::string name, int db_id, std::string path) : riv
         river.write_info(sizeofT, 2);
         river.write_info(block_size, 3);
         // river.write_info(size, 4); 默认会写0的
+        river.flush();
     }
     else {
         river.bind(path + name + ".seqdb");
@@ -102,6 +103,7 @@ void SeqDB<T, block_size>::push_back(T &t) {
     }
     len_++;
     river.write_info(len_, 4);
+    river.flush();
 }
 
 template<class T, int block_size>
@@ -125,6 +127,7 @@ void SeqDB<T, block_size>::push_back(const T &t) {
     }
     len_++;
     river.write_info(len_, 4);
+    river.flush();
 }
 
 template<class T, int block_size>
@@ -141,6 +144,7 @@ void SeqDB<T, block_size>::resize(int size) {
     }
     // 收缩
     river.Delete(idx - new_idx);
+    river.flush();
 }
 
 template<class T, int block_size>
@@ -150,6 +154,7 @@ void SeqDB<T, block_size>::update(T &t, const int index) {
     river.read(arr, idx * block_size);
     arr.data[index % array_size] = t;
     river.update(arr, idx * block_size);
+    river.flush();
 }
 
 template<class T, int block_size>
@@ -159,6 +164,7 @@ void SeqDB<T, block_size>::update(const T &t, const int index) {
     river.read(arr, idx * block_size);
     arr.data[index % array_size] = t;
     river.update(arr, idx * block_size);
+    river.flush();
 }
 
 template<class T, int block_size>
@@ -218,6 +224,7 @@ void SeqDB<T, block_size>::pop() {
         throw std::out_of_range("pop from empty SeqDB");
     }
     resize(len_ - 1);
+    river.flush();
 }
 
 #endif

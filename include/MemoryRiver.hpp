@@ -120,6 +120,10 @@ public:
     void Delete(int index) {
         /* your code here */
     }
+
+    void flush() {
+        file.flush();
+    }
 };
 
 

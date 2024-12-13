@@ -75,7 +75,9 @@ public:
         void from_bin(char* bin);
         constexpr static const int bin_size();
     };
+    RandomDB() = default;
     RandomDB(std::string dbname, int db_id = 0, std::string path = "", bool duplicate_allowed = true);
+    bool init(std::string dbname, int db_id = 0, std::string path = "", bool duplicate_allowed = true);
     ~RandomDB();
     void insert(const T& t);
     void insert(const T_A_pair& t);
@@ -92,6 +94,10 @@ public:
     std::vector<T_A_pair> range(head_index lh, int lp, head_index rh, int rp);
     void vacuum();
     std::pair<bool, T_A_pair> get(const T& t);
+    void flush() {
+        head_river.flush();
+        body_river.flush();
+    }
 private:
     MemoryRiver<head, 16> head_river;
     BlockRiver<array, block_size> body_river;

@@ -1,3 +1,6 @@
+#ifndef _operations_
+#define _operations_
+
 #include "models.hpp"
 #include <string>
 #include <utility>
@@ -56,7 +59,6 @@ bool User::useradd(const std::string &id, const std::string &password, const std
     if (!check_name(username)) return false;
     if (!check_pri(privilege)) return false;
     if (current_pri != 2) {
-        if (!check_pri(current_pri)) return false;
         if (current_pri < 3) return false;
     }
     if (privilege >= current_pri) return false;
@@ -67,7 +69,7 @@ bool User::useradd(const std::string &id, const std::string &password, const std
         Log::useradd(staff, "add user " + id);
         return true;
     }
-    catch (RandomDB<User::UserId, textcmp, UserInfo>::DuplicateException &e) {
+    catch (RandomDB<User::UserId, textcmp<max_str_len>, UserInfo>::DuplicateException &e) {
         return false;
     }
 }
@@ -217,7 +219,7 @@ bool Book::modify(const std::string & userid, int book_id, int privilege, const 
         if (price < 0) return false;
     }
     auto book = db[book_id];
-    if (isbn == book.ISBN) {
+    if (isbn == std::string(book.ISBN)) {
         return false;
     }
     if (isbn != "") {
@@ -255,7 +257,7 @@ bool Book::modify(const std::string & userid, int book_id, int privilege, const 
         book.price = price;
     }
     db.update(book, book_id);
-    Log::bookmodify(userid, book_id, "modify book " + book.ISBN);
+    Log::bookmodify(userid, book_id, "modify book " + std::string(book.ISBN));
     return true;
 }
 
@@ -304,7 +306,7 @@ Book::Price_T Deal::import(const std::string & user, int book_id, int quantity, 
     book.Stock += quantity;
     Book::db.update(book, book_id);
     db.push_back(DealInfo{db.size(), DealType::Import, total_cost, quantity});
-    Log::dealimport(user, book_id, "import book " + book.ISBN + " " + std::to_string(quantity));
+    Log::dealimport(user, book_id, "import book " + std::string(book.ISBN) + " " + std::to_string(quantity));
     return total_cost;
 }
 
@@ -376,4 +378,4 @@ void Log::getlog() {
 }
 
 
-
+#endif
