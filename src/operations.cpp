@@ -6,11 +6,13 @@
 #include <utility>
 
 bool User::check_id(const std::string &id) {
+    if (id == "") return false;
     if (id == "guest") return false;
     return check_str(id);
 }
 
 bool User::check_str(const std::string &id) {
+    if (id == "") return false;
     if (id.size() > max_str_len - 1) return false;
     for (char c : id) {
         if ((!std::isalnum(c)) && c != '_') return false;
@@ -19,6 +21,7 @@ bool User::check_str(const std::string &id) {
 }
 
 bool User::check_name(const std::string &id) {
+    if (id == "") return false;
     if (id.size() > max_str_len - 1) return false;
     for (char c : id) {
         if (c < 32 || c >= 127) return false; // 空格是可见的
@@ -36,21 +39,23 @@ bool User::check_pri(int privilege) {
     }
 }
 
-bool User::su(const std::string &id , const std::string &password, int privilege) {
-    if (!check_id(id)) return false;
-    if (!check_name(password)) return false;
-    if (!check_pri(privilege)) return false;
+int User::su(const std::string &id , const std::string &password, int privilege) {
+    if (!check_id(id)) return -1;
+    if (password != "") {
+        if (!check_str(password)) return -1;
+    }
+    if (!check_pri(privilege)) return -1;
     auto res = db.get(binstring<max_str_len>(id));
-    if (! res.first) {return false;}
+    if (! res.first) {return -1;}
     if (privilege > res.second.second.Privilege) {
         Log::login(id);
-        return true;
+        return res.second.second.Privilege;
     }
     if (std::strcmp(res.second.second.Password.c_str(), password.c_str()) == 0) {
         Log::login(id);
-        return true;
+        return res.second.second.Privilege;
     }
-    return false;
+    return -1;
 }
 
 bool User::useradd(const std::string &id, const std::string &password, const std::string &username, int privilege, int current_pri, const std::string &staff) {
@@ -112,7 +117,8 @@ bool User::Delete(const std::string &id, const std::string &staff, int privilege
 }
 
 bool Book::check_isbn(const std::string &isbn) {
-    if (isbn.size() != 13) return false;
+    if (isbn == "") return false;
+    if (isbn.size() > 20) return false;
     for (char c : isbn) {
         if (c < 32 || c >= 127) return false;
     }
@@ -120,6 +126,7 @@ bool Book::check_isbn(const std::string &isbn) {
 }
 
 bool Book::check_str(const std::string &str) {
+    if (str == "") return false;
     if (str.size() > max_str_len - 1) return false;
     for (char c : str) {
         if (c < 32 || c >= 127 || c == '\"') return false;
@@ -189,7 +196,7 @@ std::vector<Book::BookInfo> Book::show_keyword(const std::string &keyword, int p
     return ret;
 }
 
-int Book::select(const std::string &isbn, int privilege) {
+int Book::select(const std::string &isbn, int privilege, const std::string &user) {
     if (!User::check_pri(privilege)) return -1;
     if (privilege < 3) return -1;
     if (!check_isbn(isbn)) return -1;
@@ -197,6 +204,7 @@ int Book::select(const std::string &isbn, int privilege) {
     if (!res.first) {
         db.push_back(BookInfo{db.size(), binstring<max_isbn_len>(isbn), binstring<max_str_len>(""), binstring<max_str_len>(""), binstring<max_str_len>(""), 0, 0});
         isbn2id.insert(std::make_pair(binstring<max_isbn_len>(isbn), db.size() - 1));
+        Log::bookadd(user, db.size() - 1, "add book  " + isbn);
         return db.size() - 1;
     }
     return res.second.second;
@@ -310,7 +318,7 @@ Book::Price_T Deal::import(const std::string & user, int book_id, int quantity, 
     return total_cost;
 }
 
-std::string Deal::show_finance(int count) {
+std::pair<Book::Price_T, Book::Price_T> Deal::show_finance(int count) {
     if (count == -1) {
         count = db.size();
     }
@@ -318,13 +326,13 @@ std::string Deal::show_finance(int count) {
     auto list = db.range(db.size() - count, db.size());
     for (auto &deal : list) {
         if (deal.type == DealType::Sale) {
-            in += deal.price;
+            in += deal.price * deal.quantity;
         }
         else {
             out += deal.price;
         }
     }
-    return "+ " + std::to_string(in) + " - " + std::to_string(out);
+    return std::make_pair(in, out);
 }
 
 void Deal::report_finance() {

@@ -1,20 +1,40 @@
 #include "operations.cpp"
 #include "models.hpp"
+#include <ostream>
 #include <stack>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <iomanip>
 
 extern const int INSTANCE_ID;
+
+bool check_price(const std::string &price) {
+    if (price == "") return false;
+    std::istringstream iss(price);
+    double p;
+    char c;
+    if (!(iss >> p) || iss.get(c)) {
+        return false;
+    }
+    std::string::size_type dot_pos = price.find('.');
+    if (dot_pos != std::string::npos && price.size() - dot_pos - 1 > 2) {
+        return false;
+    }
+    return true;
+}
 
 int main() {
     if (User::db.init("user", INSTANCE_ID, "data/", false)) {
         User::useradd("root", "sjtu", "admin", 7, 8, "root");
     }
-    std::stack<int> selected_books;
     std::string cmd;
-    std::string current_user;
-    int current_pri = 0;
+    std::stack<std::string> c_users;
+    c_users.push("guest");
+    std::stack<int> c_selected_books;
+    c_selected_books.push(-1);
+    std::stack<int> c_privileges;
+    c_privileges.push(0);
     while (std::getline(std::cin, cmd)) {
         std::stringstream ss(cmd);
         std::string op;
@@ -25,13 +45,341 @@ int main() {
         else if (op == "su") {
             std::string id, password;
             ss >> id >> password;
-            if (User::su(id, password, current_pri)) {
-                current_user = id;
-                current_pri = 0;
+            int res = User::su(id, password, c_privileges.top());
+            if (res != -1) {
+                c_users.push(id);
+                c_privileges.push(res);
+                c_selected_books.push(-1);
             }
             else {
                 std::cout << "Invalid" << std::endl;
             }
+        }
+        else if (op == "logout") {
+            if (c_users.size() > 1) {
+                Log::logout(c_users.top());
+                c_users.pop();
+                c_privileges.pop();
+                c_selected_books.pop();
+            }
+            else {
+                std::cout << "Invalid" << std::endl;
+            }
+        }
+        else if (op == "passwd") {
+            std::string id, old_password, new_password;
+            ss >> id >> old_password >> new_password;
+            if (new_password=="") {
+                new_password = old_password;
+                old_password = "";
+            }
+            if (!User::passwd(id, new_password, c_users.top(), c_privileges.top(), old_password)) {
+                std::cout << "Invalid" << std::endl;
+            }
+        }
+        else if (op == "useradd") {
+            std::string id, password, username;
+            int pri;
+            ss >> id >> password >> pri >> username;
+            if (!User::useradd(id, password, username, pri, c_privileges.top(), c_users.top())) {
+                std::cout << "Invalid" << std::endl;
+            }
+        }
+        else if (op == "register") {
+            std::string id, password, username;
+            ss >> id >> password >> username;
+            if (!User::Register(id, password, username)) {
+                std::cout << "Invalid" << std::endl;
+            }
+        }
+        else if (op == "delete") {
+            std::string id;
+            ss >> id;
+            if (!User::Delete(id, c_users.top(), c_privileges.top())) {
+                std::cout << "Invalid" << std::endl;
+            }
+        }
+        else if (op == "show") {
+            std::string type;
+            ss >> type;
+            if (type == "finance") {
+                std::string count;
+                ss >> count;
+                int c;
+                if (count == "") {
+                    c = -1;
+                }
+                else {
+                    if (count.find_first_not_of("0123456789") != std::string::npos) {
+                        std::cout << "Invalid" << std::endl;
+                        continue;
+                    }
+                    c = std::stoi(count);
+                }
+                if (c < 0) {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+                else if (c == 0) {
+                    std::cout << std::endl; // 空行
+                    continue;
+                }
+                auto res = Deal::show_finance(c);
+                std::cout << "+ " << std::fixed << std::setprecision(2) << double(res.first) / 100 << " - " << double(res.second) / 100 << std::endl;
+                continue;
+            }
+            if (type[0] != '-') {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            int eq = type.find('=');
+            if (eq == std::string::npos) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            if (type.substr(0, eq) == "-ISBN") {
+                std::string isbn = type.substr(eq + 1);
+                auto res = Book::show_isbn(isbn, c_privileges.top(), c_users.top());
+                for (auto &book : res) {
+                    std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Keyword << "\t";
+                    std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
+                }
+            }
+            else if (type.substr(0, eq) == "-name") {
+                std::string title;
+                if (type[eq + 1] != '\"') {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+                if (type.back() != '\"') {
+                    title = type.substr(eq + 2);
+                    while (ss >> type) {
+                        if (type == "") {
+                            goto invalid2;
+                        }
+                        if (type.back() == '\"') {
+                            title += " " + type.substr(0, type.size() - 1);
+                            break;
+                        }
+                        title += " " + type;
+                    }
+                }
+                else {
+                    title = type.substr(eq + 2, type.size() - eq - 3);
+                }
+                auto res = Book::show_title(title, c_privileges.top(), c_users.top());
+            }
+            else if (type.substr(0, eq) == "-author") {
+                if (type[eq + 1] != '\"') {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+                std::string author;
+                if (type.back() != '\"') {
+                    author = type.substr(eq + 2);
+                    while (ss >> type) {
+                        if (type == "") {
+                            goto invalid2;
+                        }
+                        if (type.back() == '\"') {
+                            author += " " + type.substr(0, type.size() - 1);
+                            break;
+                        }
+                        author += " " + type;
+                    }
+                }
+                else {
+                    author = type.substr(eq + 2, type.size() - eq - 3);
+                }
+                auto res = Book::show_author(author, c_privileges.top(), c_users.top());
+            }
+            else if (type.substr(0, eq) == "-keyword") {
+                if (type[eq + 1] != '\"' || type.back() != '\"') {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+                std::string keyword = type.substr(eq + 2, type.size() - eq - 3);
+                auto res = Book::show_keyword(keyword, c_privileges.top(), c_users.top());
+            }
+            else {
+                invalid2 :;
+                std::cout << "Invalid" << std::endl;
+            }
+        }
+        else if (op == "select") {
+            std::string isbn;
+            ss >> isbn;
+            int res = Book::select(isbn, c_privileges.top(), c_users.top());
+            if (res != -1) {
+                c_selected_books.top() = res;
+            }
+            else {
+                std::cout << "Invalid" << std::endl;
+            }
+        }
+        else if (op == "modify") {
+            std::string arg;
+            std::string isbn, title, author, keyword;
+            Book::Price_T price = -1;
+            if (c_selected_books.top() == -1) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            while (ss >> arg) {
+                if (arg[0] != '-') {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+                int eq = arg.find('=');
+                if (eq == std::string::npos) {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+                if (arg.substr(0, eq) == "-ISBN") {
+                    if (isbn != "") {
+                        goto invalid;
+                    }
+                    isbn = arg.substr(eq + 1);
+                }
+                else if (arg.substr(0, eq) == "-name") {
+                    if (title != "") {
+                        goto invalid;
+                    }
+                    if (arg[eq + 1] != '\"') {
+                        std::cout << "Invalid" << std::endl;
+                        continue;
+                    }
+                    if (arg.back() != '\"') {
+                        title = arg.substr(eq + 2);
+                        while (ss >> arg) {
+                            if (arg == "") {
+                                goto invalid;
+                            }
+                            if (arg.back() == '\"') {
+                                title += " " + arg.substr(0, arg.size() - 1);
+                                break;
+                            }
+                            title += " " + arg;
+                        }
+                    }
+                    else {
+                        title = arg.substr(eq + 2, arg.size() - eq - 3);
+                    }
+                }
+                else if (arg.substr(0, eq) == "-author") {
+                    if (author != "") {
+                        goto invalid;
+                    }
+                    if (arg[eq + 1] != '\"') {
+                        std::cout << "Invalid" << std::endl;
+                        continue;
+                    }
+                    if (arg.back() != '\"') {
+                        author = arg.substr(eq + 2);
+                        while (ss >> arg) {
+                            if (arg == "") {
+                                goto invalid;
+                            }
+                            if (arg.back() == '\"') {
+                                author += " " + arg.substr(0, arg.size() - 1);
+                                break;
+                            }
+                            author += " " + arg;
+                        }
+                    }
+                    else {
+                        author = arg.substr(eq + 2, arg.size() - eq - 2);
+                    }
+                }
+                else if (arg.substr(0, eq) == "-keyword") {
+                    if (keyword != "") {
+                        goto invalid;
+                    }
+                    if (arg[eq + 1] != '\"' || arg.back() != '\"') {
+                        std::cout << "Invalid" << std::endl;
+                        continue;
+                    }
+                    else {
+                        keyword = arg.substr(eq + 2, arg.size() - eq - 2);
+                    }
+                }
+                else if (arg.substr(0, eq) == "-price") {
+                    if (price != -1) {
+                        goto invalid;
+                    }
+                    std::string p = arg.substr(eq + 1);
+                    if (!check_price(p)) {
+                        std::cout << "Invalid" << std::endl;
+                        continue;
+                    }
+                    price = std::stod(p) * 100;
+                }
+                else {
+                    std::cout << "Invalid" << std::endl;
+                }
+            }
+            if (isbn == "" && title == "" && author == "" && keyword == "" && price == -1) {
+                invalid :;
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            if (!Book::modify(c_users.top(), c_selected_books.top(), c_privileges.top(), isbn, title, author, keyword, price)) {
+                std::cout << "Invalid" << std::endl;
+            }
+        }
+        else if (op == "buy") {
+            std::string isbn;
+            std::string quantity;
+            ss >> isbn >> quantity;
+            if (quantity.find_first_not_of("0123456789") != std::string::npos) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            int q = std::stoi(quantity);
+            if (q <= 0) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            Book::Price_T res = Deal::buy(c_users.top(), isbn, q, c_privileges.top());
+            if (res == -1) {
+                std::cout << "Invalid" << std::endl;
+            }
+            else {
+                std::cout << std::fixed << std::setprecision(2) << double(res) / 100 << std::endl;
+            }
+        }
+        else if (op == "import") {
+            std::string quantity, total_cost;
+            ss >> quantity >> total_cost;
+            if (quantity.find_first_not_of("0123456789") != std::string::npos) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            if (!check_price(total_cost)) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            if (std::stoi(quantity) <= 0) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            Book::Price_T res = Deal::import(c_users.top(), c_selected_books.top(), std::stoi(quantity), std::stod(total_cost) * 100, c_privileges.top());
+            if (res == -1) {
+                std::cout << "Invalid" << std::endl;
+            }
+            else {
+                std::cout << std::fixed << std::setprecision(2) << double(res) / 100 << std::endl;
+            }
+        }
+        else if (op == "report") {
+
+        }
+        else if (op == "log") {
+
+        }
+        else if (op == "") {}
+        else {
+            std::cout << "Invalid" << std::endl;
         }
     }
 }
