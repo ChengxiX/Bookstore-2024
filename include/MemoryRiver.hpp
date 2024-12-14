@@ -84,6 +84,7 @@ public:
         if constexpr (binable<T>) {
             char* data = t.to_bin();
             file.write(data, sizeofT);
+            delete []data;
         } else {
             file.write(reinterpret_cast<const char *>(&t), sizeofT);
         }
@@ -97,6 +98,7 @@ public:
         if constexpr (binable<T>) {
             char* data = t.to_bin();
             file.write(data, sizeofT);
+            delete []data;
         } else {
             file.write(reinterpret_cast<const char *>(&t), sizeofT);
         }

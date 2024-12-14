@@ -377,6 +377,7 @@ char* RandomDB<T, Comp, Attachment, block_size>::head::to_bin() {
         delete[] data;
         char* data2 = end.to_bin();
         std::copy(data2, data2 + sizeofT, ptr);
+        delete [] data2;
         ptr += sizeofT;
         std::copy(reinterpret_cast<char*>(&next), reinterpret_cast<char*>(&next) + sizeof(head_index), ptr);
         ptr += sizeof(head_index);
