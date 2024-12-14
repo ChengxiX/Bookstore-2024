@@ -166,10 +166,10 @@ namespace Book {
     bool check_isbn(const std::string &isbn);
     bool check_str(const std::string &str);
     SeqDB<class BookInfo> db("book", INSTANCE_ID, "data/");
-    RandomDB<ISBN_T, textcmp<max_isbn_len>, int> isbn2id("book_isbn_index", INSTANCE_ID, "data/", false);
-    KVDB<int, std::less<int>, max_str_len> title2id("book_title_index", INSTANCE_ID, "data/", false);
-    KVDB<int, std::less<int>, max_str_len> author2id("book_author_index", INSTANCE_ID, "data/", false);
-    KVDB<int, std::less<int>, max_str_len> keyword2id("book_keyword_index", INSTANCE_ID, "data/", false);
+    RandomDB<ISBN_T, textcmp<max_isbn_len>, int> isbn2id("book_isbn_index", INSTANCE_ID, "", false);
+    KVDB<int, std::less<int>, max_str_len> title2id("book_title_index", INSTANCE_ID, "", false);
+    KVDB<int, std::less<int>, max_str_len> author2id("book_author_index", INSTANCE_ID, "", false);
+    KVDB<int, std::less<int>, max_str_len> keyword2id("book_keyword_index", INSTANCE_ID, "", false);
     // 以 [ISBN] 字典升序依次输出
     std::pair<bool, std::vector<BookInfo>> show_isbn(const std::string &isbn, int privilege, const std::string &staff);
     std::pair<bool, std::vector<BookInfo>> show_title(const std::string &title, int privilege, const std::string &staff);
@@ -254,7 +254,7 @@ namespace Log {
         }
     };
     SeqDB<LogInfo> db("log", INSTANCE_ID, "data/");
-    KVDB<int, std::less<int>, User::max_str_len> index_db("op2log", INSTANCE_ID, "data/", false);
+    KVDB<int, std::less<int>, User::max_str_len> index_db("op2log", INSTANCE_ID, "", false);
     void report_employee(); // 不一定是void，待定
     void getlog(); // 不一定是void，待定
     void login(const std::string & userId);

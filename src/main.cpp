@@ -35,7 +35,7 @@ bool check_price(const std::string &price) {
 }
 
 int main() {
-    if (User::db.init("user", INSTANCE_ID, "data/", false)) {
+    if (User::db.init("user", INSTANCE_ID, "", false)) {
         User::useradd("root", "sjtu", "admin", 7, 8, "root");
     }
     std::string cmd;
