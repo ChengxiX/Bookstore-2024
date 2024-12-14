@@ -28,6 +28,9 @@ struct binstring {
     binstring(const char* s) {
         std::copy(s, s + max_size, str.begin());
     }
+    binstring(const binstring<max> &a) {
+        std::strcpy(str.begin(), a.str.begin());
+    }
     const char* c_str() const {return str.begin();}
     operator std::string() const {
         return std::string(c_str());
