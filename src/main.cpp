@@ -125,7 +125,21 @@ int main() {
         else if (op == "show") {
             std::string type;
             ss >> type;
-            if (type == "finance") {
+            if (type == "") {
+                auto all = Book::db.range(0, Book::db.size());
+                std::sort(all.begin(), all.end(), [](const Book::BookInfo &a, const Book::BookInfo &b) {
+                    return std::strcmp(a.ISBN.c_str(), b.ISBN.c_str()) < 0;
+                });
+                for (auto &book : all) {
+                    std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
+                    std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
+                }
+                if (all.empty()) {
+                    std::cout << std::endl;
+                }
+                continue;
+            }
+            else if (type == "finance") {
                 std::string count;
                 ss >> count;
                 if (check_rest(ss)) { continue;}
@@ -140,11 +154,7 @@ int main() {
                     }
                     c = std::stoi(count);
                 }
-                if (c < 0) {
-                    std::cout << "Invalid" << std::endl;
-                    continue;
-                }
-                else if (c == 0) {
+                if (c == 0) {
                     std::cout << std::endl; // 空行
                     continue;
                 }
@@ -177,6 +187,9 @@ int main() {
                     std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
                     std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
                 }
+                if (res.second.empty()) {
+                    std::cout << std::endl;
+                }
             }
             else if (type.substr(0, eq) == "-name") {
                 std::string title;
@@ -206,9 +219,15 @@ int main() {
                     std::cout << "Invalid" << std::endl;
                     continue;
                 }
+                std::sort(res.second.begin(), res.second.end(), [](const Book::BookInfo &a, const Book::BookInfo &b) {
+                    return std::strcmp(a.ISBN.c_str(), b.ISBN.c_str()) < 0;
+                });
                 for (auto &book : res.second) {
                     std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
                     std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
+                }
+                if (res.second.empty()) {
+                    std::cout << std::endl;
                 }
             }
             else if (type.substr(0, eq) == "-author") {
@@ -239,9 +258,15 @@ int main() {
                     std::cout << "Invalid" << std::endl;
                     continue;
                 }
+                std::sort(res.second.begin(), res.second.end(), [](const Book::BookInfo &a, const Book::BookInfo &b) {
+                    return std::strcmp(a.ISBN.c_str(), b.ISBN.c_str()) < 0;
+                });
                 for (auto &book : res.second) {
                     std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
                     std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
+                }
+                if (res.second.empty()) {
+                    std::cout << std::endl;
                 }
             }
             else if (type.substr(0, eq) == "-keyword") {
@@ -256,9 +281,15 @@ int main() {
                     std::cout << "Invalid" << std::endl;
                     continue;
                 }
+                std::sort(res.second.begin(), res.second.end(), [](const Book::BookInfo &a, const Book::BookInfo &b) {
+                    return std::strcmp(a.ISBN.c_str(), b.ISBN.c_str()) < 0;
+                });
                 for (auto &book : res.second) {
                     std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
                     std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
+                }
+                if (res.second.empty()) {
+                    std::cout << std::endl;
                 }
             }
             else {
@@ -428,9 +459,6 @@ int main() {
             if (res == -1) {
                 std::cout << "Invalid" << std::endl;
                 continue;
-            }
-            else {
-                std::cout << std::fixed << std::setprecision(2) << double(res) / 100 << std::endl;
             }
         }
         else if (op == "report") {

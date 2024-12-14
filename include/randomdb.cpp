@@ -267,7 +267,7 @@ bool RandomDB<T, Comp, Attachment, block_size>::erase(const T& t) {
         update_head = true;
     }
     if (p == content.data) {
-        h.begin = content.data[1].first; //
+        h.begin = content.data[1].first; // 是第二个
         update_head = true;
     }
     std::copy(bigger, content.data + content.size, bigger - 1);
