@@ -19,19 +19,25 @@ bool check_rest(std::stringstream &ss) {
     return false;
 }
 
-bool check_price(const std::string &price) {
+int check_price(const std::string &price) {
     if (price == "") return false;
     std::istringstream iss(price);
     double p;
     char c;
     if (!(iss >> p) || iss.get(c)) {
-        return false;
+        return -1;
     }
     std::string::size_type dot_pos = price.find('.');
-    if (dot_pos != std::string::npos && price.size() - dot_pos - 1 > 2) {
-        return false;
+    if (dot_pos == std::string::npos) {
+        return 0;
     }
-    return true;
+    if (price.size() - dot_pos - 1 == 2) {
+        return 2;
+    }
+    if (price.size() - dot_pos - 1 == 1) {
+        return 1;
+    }
+    return -1;
 }
 
 int main() {
@@ -397,10 +403,24 @@ int main() {
                         goto invalid;
                     }
                     std::string p = arg.substr(eq + 1);
-                    if (!check_price(p)) {
+                    int dot = check_price(p);
+                    if (dot == -1) {
                         goto invalid;
                     }
-                    price = std::stod(p) * 100;
+                    std::string inte;
+                    for (char c : p) {
+                        if (c == '.') {
+                            continue;
+                        }
+                        inte += c;
+                    }
+                    price = std::stoll(inte);
+                    if (dot == 1) {
+                        price *= 10;
+                    }
+                    else if (dot == 0) {
+                        price *= 100;
+                    }
                 }
                 else {
                     goto invalid;
@@ -447,7 +467,8 @@ int main() {
                 std::cout << "Invalid" << std::endl;
                 continue;
             }
-            if (!check_price(total_cost)) {
+            int dot = check_price(total_cost);
+            if (dot == -1) {
                 std::cout << "Invalid" << std::endl;
                 continue;
             }
@@ -455,7 +476,21 @@ int main() {
                 std::cout << "Invalid" << std::endl;
                 continue;
             }
-            Book::Price_T res = Deal::import(c_users.top(), c_selected_books.top(), std::stoi(quantity), std::stod(total_cost) * 100, c_privileges.top());
+            std::string inte;
+            for (char c : total_cost) {
+                if (c == '.') {
+                    continue;
+                }
+                inte += c;
+            }
+            Book::Price_T price = std::stoll(inte);
+            if (dot == 1) {
+                price *= 10;
+            }
+            else if (dot == 0) {
+                price *= 100;
+            }
+            Book::Price_T res = Deal::import(c_users.top(), c_selected_books.top(), std::stoi(quantity), price, c_privileges.top());
             if (res == -1) {
                 std::cout << "Invalid" << std::endl;
                 continue;
