@@ -40,7 +40,7 @@ public:
         char* to_bin();
         void from_bin(char* bin);
         constexpr static const int bin_size();
-        // T_A_pair(const T_A_pair& t) : first(t.first), second(t.second) {}
+        T_A_pair(const T_A_pair& t) : first(t.first), second(t.second) {}
     };
     constexpr static const int array_size = (block_size - sizeof(bool) - sizeof(int)) / T_A_pair::bin_size();
     struct Comp_A {
