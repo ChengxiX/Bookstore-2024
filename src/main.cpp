@@ -19,6 +19,17 @@ bool check_rest(std::stringstream &ss) {
     return false;
 }
 
+bool loggedin(std::stack<std::string> stack, const std::string& element) {
+    // 遍历栈中的每个元素
+    while (!stack.empty()) {
+        if (stack.top() == element) {
+            return true;
+        }
+        stack.pop();
+    }
+    return false;
+}
+
 int check_price(const std::string &price) {
     if (price == "") return false;
     std::istringstream iss(price);
@@ -124,6 +135,10 @@ int main() {
             std::string id;
             ss >> id;
             if (check_rest(ss)) { continue;}
+            if (loggedin(c_users, id)) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
             if (!User::Delete(id, c_users.top(), c_privileges.top())) {
                 std::cout << "Invalid" << std::endl;
                 continue;
