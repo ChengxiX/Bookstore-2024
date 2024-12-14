@@ -343,11 +343,14 @@ std::pair<bool, typename RandomDB<T, Comp, Attachment, block_size>::T_A_pair> Ra
     head h = get_head(idx);
     array content = get_body(h.body);
     T_A_pair* bigger = std::upper_bound(content.data, content.data + content.size, t, Comp_A());
+    if (bigger == content.data) {
+        return std::make_pair(false, T_A_pair{});
+    }
     bigger --;
     if (Comp_A()(t, *bigger) || Comp_A()(*bigger, t)) {
         return std::make_pair(false, T_A_pair{});
     }
-    return std::make_pair(true, *bigger);
+    return std::pair<bool, T_A_pair>(true, *bigger); // 问题
 }
 
 template<class T, class Comp, class Attachment, int block_size>
