@@ -41,6 +41,7 @@ int check_price(const std::string &price) {
 }
 
 int main() {
+    // freopen("data.in", "r", stdin);
     if (User::db.init("user", INSTANCE_ID, "", false)) {
         User::useradd("root", "sjtu", "admin", 7, 8, "root");
     }

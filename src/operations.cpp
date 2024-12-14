@@ -331,6 +331,9 @@ std::pair<Book::Price_T, Book::Price_T> Deal::show_finance(int count, const std:
     if (count == -1) {
         count = db.size();
     }
+    if (count > db.size()) {
+        return {-1, -1};
+    }
     Book::Price_T in = 0, out = 0;
     auto list = db.range(db.size() - count, db.size());
     for (auto &deal : list) {
