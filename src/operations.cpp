@@ -204,7 +204,7 @@ int Book::select(const std::string &isbn, int privilege, const std::string &user
     if (!res.first) {
         db.push_back(BookInfo{db.size(), binstring<max_isbn_len>(isbn), binstring<max_str_len>(""), binstring<max_str_len>(""), binstring<max_str_len>(""), 0, 0});
         isbn2id.insert(std::make_pair(binstring<max_isbn_len>(isbn), db.size() - 1));
-        Log::bookadd(user, db.size() - 1, "add book  " + isbn);
+        Log::bookadd(user, db.size() - 1, "add book " + isbn);
         return db.size() - 1;
     }
     return res.second.second;
@@ -232,10 +232,12 @@ bool Book::modify(const std::string & userid, int book_id, int privilege, const 
     }
     if (isbn != "") {
         if (!check_isbn(isbn)) return false;
-        auto res = isbn2id.get(binstring<max_isbn_len>(isbn));
+        auto res = isbn2id.get(binstring<max_isbn_len>(book.ISBN));
         if (!res.first) {
+            // 不应该发生
             return false;
         }
+        book.ISBN = binstring<max_isbn_len>(isbn);
         isbn2id.erase(binstring<max_isbn_len>(book.ISBN));
         res.second.first = binstring<max_isbn_len>(isbn);
         isbn2id.insert(res.second);
