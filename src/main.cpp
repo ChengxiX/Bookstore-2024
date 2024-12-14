@@ -124,7 +124,11 @@ int main() {
                     std::cout << std::endl; // 空行
                     continue;
                 }
-                auto res = Deal::show_finance(c);
+                auto res = Deal::show_finance(c, c_users.top(), c_privileges.top());
+                if (res.first == -1) {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
                 std::cout << "+ " << std::fixed << std::setprecision(2) << double(res.first) / 100 << " - " << double(res.second) / 100 << std::endl;
                 continue;
             }
@@ -140,8 +144,12 @@ int main() {
             if (type.substr(0, eq) == "-ISBN") {
                 std::string isbn = type.substr(eq + 1);
                 auto res = Book::show_isbn(isbn, c_privileges.top(), c_users.top());
-                for (auto &book : res) {
-                    std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Keyword << "\t";
+                if (!res.first) {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+                for (auto &book : res.second) {
+                    std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
                     std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
                 }
             }
@@ -168,6 +176,14 @@ int main() {
                     title = type.substr(eq + 2, type.size() - eq - 3);
                 }
                 auto res = Book::show_title(title, c_privileges.top(), c_users.top());
+                if (!res.first) {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+                for (auto &book : res.second) {
+                    std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
+                    std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
+                }
             }
             else if (type.substr(0, eq) == "-author") {
                 if (type[eq + 1] != '\"') {
@@ -192,6 +208,14 @@ int main() {
                     author = type.substr(eq + 2, type.size() - eq - 3);
                 }
                 auto res = Book::show_author(author, c_privileges.top(), c_users.top());
+                if (!res.first) {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+                for (auto &book : res.second) {
+                    std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
+                    std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
+                }
             }
             else if (type.substr(0, eq) == "-keyword") {
                 if (type[eq + 1] != '\"' || type.back() != '\"') {
@@ -200,6 +224,14 @@ int main() {
                 }
                 std::string keyword = type.substr(eq + 2, type.size() - eq - 3);
                 auto res = Book::show_keyword(keyword, c_privileges.top(), c_users.top());
+                if (!res.first) {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+                for (auto &book : res.second) {
+                    std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
+                    std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
+                }
             }
             else {
                 invalid2 :;
@@ -288,7 +320,7 @@ int main() {
                         }
                     }
                     else {
-                        author = arg.substr(eq + 2, arg.size() - eq - 2);
+                        author = arg.substr(eq + 2, arg.size() - eq - 3);
                     }
                 }
                 else if (arg.substr(0, eq) == "-keyword") {
@@ -300,7 +332,7 @@ int main() {
                         continue;
                     }
                     else {
-                        keyword = arg.substr(eq + 2, arg.size() - eq - 2);
+                        keyword = arg.substr(eq + 2, arg.size() - eq - 3);
                     }
                 }
                 else if (arg.substr(0, eq) == "-price") {

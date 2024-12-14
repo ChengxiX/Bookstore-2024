@@ -143,57 +143,57 @@ bool Book::Keywords::check_single_kw(const std::string &str) {
     return true;
 }
 
-std::vector<Book::BookInfo> Book::show_isbn(const std::string &isbn, int privilege, const std::string &staff) {
-    if (!User::check_pri(privilege)) return {};
-    if (check_isbn(isbn)) return {};
-    if (privilege < 1) return {};
+std::pair<bool, std::vector<Book::BookInfo>> Book::show_isbn(const std::string &isbn, int privilege, const std::string &staff) {
+    if (!User::check_pri(privilege)) return {false, {}};
+    if (!check_isbn(isbn)) return {false, {}};
+    if (privilege < 1) return {false, {}};
     auto res = isbn2id.get(binstring<max_isbn_len>(isbn));
     std::vector<BookInfo> ret;
     if (res.first) {
         ret.push_back(db[res.second.second]);
     }
     Log::showbook(staff, "show book with ISBN " + isbn, res.second.second);
-    return ret;
+    return {true, ret};
 }
 
-std::vector<Book::BookInfo> Book::show_title(const std::string &title, int privilege, const std::string &staff) {
-    if (!User::check_pri(privilege)) return {};
-    if (!check_str(title)) return {};
-    if (privilege < 1) return {};
-    auto res = title2id.find(binstring<max_str_len>(title));
+std::pair<bool, std::vector<Book::BookInfo>> Book::show_title(const std::string &title, int privilege, const std::string &staff) {
+    if (!User::check_pri(privilege)) return {false, {}};
+    if (!check_str(title)) return {false, {}};
+    if (privilege < 1) return {false, {}};
+    auto res = title2id.find(title);
     std::vector<BookInfo> ret;
     for (auto &p : res) {
         ret.push_back(db[p.second]);
     }
     Log::showbook(staff, "show book with title " + title, -1);
-    return ret;
+    return {true, ret};
 }
 
-std::vector<Book::BookInfo> Book::show_author(const std::string &author, int privilege, const std::string &staff) {
-    if (!User::check_pri(privilege)) return {};
-    if (!check_str(author)) return {};
-    if (privilege < 1) return {};
-    auto res = author2id.find(binstring<max_str_len>(author));
+std::pair<bool, std::vector<Book::BookInfo>> Book::show_author(const std::string &author, int privilege, const std::string &staff) {
+    if (!User::check_pri(privilege)) return {false, {}};
+    if (!check_str(author)) return {false, {}};
+    if (privilege < 1) return {false, {}};
+    auto res = author2id.find(author);
     std::vector<BookInfo> ret;
     for (auto &p : res) {
         ret.push_back(db[p.second]);
     }
     Log::showbook(staff, "show book with author " + author, -1);
-    return ret;
+    return {true, ret};
 }   
 
-std::vector<Book::BookInfo> Book::show_keyword(const std::string &keyword, int privilege, const std::string &staff) {
+std::pair<bool, std::vector<Book::BookInfo>> Book::show_keyword(const std::string &keyword, int privilege, const std::string &staff) {
     // keyword
-    if (!User::check_pri(privilege)) return {};
-    if (!Keywords::check_single_kw(keyword)) return {};
-    if (privilege < 1) return {};
-    auto res = keyword2id.find(binstring<max_str_len>(keyword));
+    if (!User::check_pri(privilege)) return {false, {}};
+    if (!Keywords::check_single_kw(keyword)) return {false, {}};
+    if (privilege < 1) return {false, {}};
+    auto res = keyword2id.find(keyword);
     std::vector<BookInfo> ret;
     for (auto &p : res) {
         ret.push_back(db[p.second]);
     }
     Log::showbook(staff, "show book with keyword " + keyword, -1);
-    return ret;
+    return {true, ret};
 }
 
 int Book::select(const std::string &isbn, int privilege, const std::string &user) {
@@ -241,24 +241,24 @@ bool Book::modify(const std::string & userid, int book_id, int privilege, const 
         isbn2id.insert(res.second);
     }
     if (title != "") {
-        title2id.erase(binstring<max_str_len>(book.Title), book_id);
+        title2id.erase(book.Title, book_id);
         book.Title = binstring<max_str_len>(title);
-        title2id.insert(binstring<max_str_len>(title), book_id);
+        title2id.insert(title, book_id);
     }
     if (author != "") {
-        author2id.erase(binstring<max_str_len>(book.Author), book_id);
+        author2id.erase(book.Author, book_id);
         book.Author = binstring<max_str_len>(author);
-        author2id.insert(binstring<max_str_len>(author), book_id);
+        author2id.insert(author, book_id);
     }
     if (keyword != "") {
         auto kws = Keywords::get(book.Keyword);
         for (auto &kw : kws) {
-            keyword2id.erase(binstring<max_str_len>(kw), book_id);
+            keyword2id.erase(kw, book_id);
         }
         kws = Keywords::get(keyword);
         book.Keyword = binstring<max_str_len>(keyword);
         for (auto &kw : kws) {
-            keyword2id.insert(binstring<max_str_len>(kw), book_id);
+            keyword2id.insert(kw, book_id);
         }
     }
     if (price != -1) {
@@ -318,7 +318,9 @@ Book::Price_T Deal::import(const std::string & user, int book_id, int quantity, 
     return total_cost;
 }
 
-std::pair<Book::Price_T, Book::Price_T> Deal::show_finance(int count) {
+std::pair<Book::Price_T, Book::Price_T> Deal::show_finance(int count, const std::string &staff, int privilege) {
+    if (!User::check_pri(privilege)) return {-1, -1};
+    if (privilege < 7) return {-1, -1};
     if (count == -1) {
         count = db.size();
     }
@@ -377,6 +379,10 @@ void Log::dealimport(const std::string &userId, int deal_id, const std::string &
 
 void Log::dealsale(const std::string &userId, int deal_id, const std::string &info) {
     db.push_back(LogInfo{db.size(), OpType::DealSale, userId, deal_id, info});
+}
+
+void Log::showfinance(const std::string &userId, const std::string &info) {
+    db.push_back(LogInfo{db.size(), OpType::ShowFinance, userId, -1, info});
 }
 
 void Log::report_employee() {

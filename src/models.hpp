@@ -20,34 +20,37 @@ struct binstring {
     char* to_bin();
     void from_bin(char* bin);
     constexpr static const int bin_size();
-    binstring(const std::string& s) : str(s) {}
-    binstring() {str.resize(max_size);};
-    binstring(const char* s) : str(s) {}
-    const char* c_str() const {return str.c_str();}
+    binstring(const std::string& s) {
+        std::copy(s.begin(), s.end(), str.begin());
+        str[s.size()] = 0;
+    }
+    binstring() {};
+    binstring(const char* s) {
+        std::copy(s, s + max_size, str.begin());
+    }
+    const char* c_str() const {return str.begin();}
     operator std::string() const {
-        return str;
+        return std::string(c_str());
     }
     friend std::ostream& operator<<(std::ostream& os, const binstring& bs) {
-        os << bs.str;
+        os << std::string(bs);
         return os;
     }
     binstring<max_size> & operator=(const binstring<max_size> &a) {
-        str.resize(max_size);
-        str.assign(a.str, 0, max_size - 1);
+        std::copy(a.c_str(), a.c_str() + max_size, str.begin());
         return *this;
     }
 };
 
 template<int max_size>
 void binstring<max_size>::from_bin(char* bin) {
-    str.resize(max_size);
-    str.assign(bin, 0, max_size - 1);
+    std::copy(bin, bin + max_size, str.begin());
 }
 
 template<int max_size>
 char* binstring<max_size>::to_bin() {
     char* bin = new char[max_size];
-    std::copy(str.c_str(), str.c_str() + max_size, bin);
+    std::copy(c_str(), c_str() + max_size, bin);
     return bin;
 }
 
@@ -168,10 +171,10 @@ namespace Book {
     KVDB<int, std::less<int>, max_str_len> author2id("book_author_index", INSTANCE_ID, "data/", false);
     KVDB<int, std::less<int>, max_str_len> keyword2id("book_keyword_index", INSTANCE_ID, "data/", false);
     // 以 [ISBN] 字典升序依次输出
-    std::vector<BookInfo> show_isbn(const std::string &isbn, int privilege, const std::string &staff);
-    std::vector<BookInfo> show_title(const std::string &title, int privilege, const std::string &staff);
-    std::vector<BookInfo> show_author(const std::string &author, int privilege, const std::string &staff);
-    std::vector<BookInfo> show_keyword(const std::string &keyword, int privilege, const std::string &staff);
+    std::pair<bool, std::vector<BookInfo>> show_isbn(const std::string &isbn, int privilege, const std::string &staff);
+    std::pair<bool, std::vector<BookInfo>> show_title(const std::string &title, int privilege, const std::string &staff);
+    std::pair<bool, std::vector<BookInfo>> show_author(const std::string &author, int privilege, const std::string &staff);
+    std::pair<bool, std::vector<BookInfo>> show_keyword(const std::string &keyword, int privilege, const std::string &staff);
     int select(const std::string &isbn, int privilege, const std::string & user); // 返回书的id
     bool modify(const std::string & userid, int book_id, int privilege, const std::string &isbn = "", const std::string &title = "", const std::string &author = "", const std::string &keyword = "", Price_T price = -1);
 
@@ -196,7 +199,7 @@ namespace Deal {
     SeqDB<DealInfo> db("deal", INSTANCE_ID, "data/");
     Book::Price_T buy(const std::string & user, const std::string &isbn, int quantity, int privilege);
     Book::Price_T import(const std::string & user, int book_id, int quantity, Book::Price_T total_cost, int privilege);
-    std::pair<Book::Price_T, Book::Price_T> show_finance(int count = -1);
+    std::pair<Book::Price_T, Book::Price_T> show_finance(int count = -1, const std::string &staff = "", int privilege = 0);
     void report_finance();  // 不一定是void，待定
 }
 
@@ -211,7 +214,8 @@ namespace Log {
         BookAdd,
         BookModify,
         DealImport,
-        DealSale
+        DealSale,
+        ShowFinance
     };
     struct LogInfo {
         int id;
@@ -263,6 +267,7 @@ namespace Log {
     void bookmodify(const std::string & userId, int book_id, const std::string & info);
     void dealimport(const std::string & userId, int deal_id, const std::string & info);
     void dealsale(const std::string & userId, int deal_id, const std::string & info);
+    void showfinance(const std::string & userId, const std::string & info);
 }
 
 #endif
