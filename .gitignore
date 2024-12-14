@@ -1,4 +1,5 @@
 build/
-.vscode/
+
 requirements.md
-tests/test_inputs/
+tests/
+.cache/

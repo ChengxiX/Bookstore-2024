@@ -165,7 +165,7 @@ namespace Book {
     };
     bool check_isbn(const std::string &isbn);
     bool check_str(const std::string &str);
-    SeqDB<class BookInfo> db("book", INSTANCE_ID, "data/");
+    SeqDB<class BookInfo> db("book", INSTANCE_ID, "");
     RandomDB<ISBN_T, textcmp<max_isbn_len>, int> isbn2id("book_isbn_index", INSTANCE_ID, "", false);
     KVDB<int, std::less<int>, max_str_len> title2id("book_title_index", INSTANCE_ID, "", false);
     KVDB<int, std::less<int>, max_str_len> author2id("book_author_index", INSTANCE_ID, "", false);
@@ -196,7 +196,7 @@ namespace Deal {
         Book::Price_T price = 0; // 注意，如果是Import是总价，如果是Sale是单价
         int quantity;
     };
-    SeqDB<DealInfo> db("deal", INSTANCE_ID, "data/");
+    SeqDB<DealInfo> db("deal", INSTANCE_ID, "");
     Book::Price_T buy(const std::string & user, const std::string &isbn, int quantity, int privilege);
     Book::Price_T import(const std::string & user, int book_id, int quantity, Book::Price_T total_cost, int privilege);
     std::pair<Book::Price_T, Book::Price_T> show_finance(int count = -1, const std::string &staff = "", int privilege = 0);
@@ -253,7 +253,7 @@ namespace Log {
             info.from_bin(ptr);
         }
     };
-    SeqDB<LogInfo> db("log", INSTANCE_ID, "data/");
+    SeqDB<LogInfo> db("log", INSTANCE_ID, "");
     KVDB<int, std::less<int>, User::max_str_len> index_db("op2log", INSTANCE_ID, "", false);
     void report_employee(); // 不一定是void，待定
     void getlog(); // 不一定是void，待定
