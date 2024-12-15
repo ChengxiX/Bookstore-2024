@@ -350,7 +350,8 @@ std::pair<bool, typename RandomDB<T, Comp, Attachment, block_size>::T_A_pair> Ra
     if (Comp_A()(t, *bigger) || Comp_A()(*bigger, t)) {
         return std::make_pair(false, T_A_pair{});
     }
-    return std::pair<bool, T_A_pair>(true, *bigger); // 问题
+    T_A_pair res(*bigger);
+    return std::pair<bool, T_A_pair>(true, res); // 问题
 }
 
 template<class T, class Comp, class Attachment, int block_size>
@@ -434,6 +435,7 @@ char* RandomDB<T, Comp, Attachment, block_size>::array::to_bin() {
         ptr += T_A_pair::bin_size();
         delete[] str_data;
     }
+    std::fill(ptr, bin + bin_size(), 0);
     return bin;
 }
 
