@@ -237,11 +237,12 @@ bool Book::modify(const std::string & userid, int book_id, int privilege, const 
             // 不应该发生
             return false;
         }
-        isbn2id.erase(binstring<max_isbn_len>(book.ISBN));
+        binstring<max_isbn_len> original = book.ISBN;
         book.ISBN = binstring<max_isbn_len>(isbn);
-        res.second.first = binstring<max_isbn_len>(isbn);
         try {
+            res.second.first = binstring<max_isbn_len>(isbn);
             isbn2id.insert(res.second);
+            isbn2id.erase(binstring<max_isbn_len>(original));
         }
         catch (RandomDB<ISBN_T, textcmp<max_isbn_len>, int>::DuplicateException &e) {
             return false;
