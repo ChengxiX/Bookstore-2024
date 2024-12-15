@@ -29,7 +29,7 @@ class RandomDB {
             return Attachment::bin_size();
         }
         else {
-            return sizeof(T);
+            return sizeof(Attachment);
         }
     }
     static constexpr const int sizeofA = sizeofA_();
