@@ -24,7 +24,7 @@ struct binstring {
         std::copy(s.begin(), s.end(), str.begin());
         str[s.size()] = 0;
     }
-    binstring() {};
+    binstring() = default;
     binstring(const char* s) {
         std::copy(s, s + max_size, str.begin());
     }
