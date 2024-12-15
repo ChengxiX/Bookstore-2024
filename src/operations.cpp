@@ -352,11 +352,11 @@ void Deal::report_finance() {
 
 // namespace Log {
 void Log::login(const std::string &id) {
-    db.push_back(LogInfo{db.size(), OpType::UserLogin, id, -1, ""});
+    db.push_back(LogInfo{db.size(), OpType::UserLogin, id, -1, std::string("login")});
 }
 
 void Log::logout(const std::string &id) {
-    db.push_back(LogInfo{db.size(), OpType::UserLogout, id, -1, ""});
+    db.push_back(LogInfo{db.size(), OpType::UserLogout, id, -1, std::string("logout")});
 }
 
 void Log::useradd(const std::string &userId, const std::string &info) {
