@@ -116,10 +116,17 @@ int main() {
         }
         else if (op == "useradd") {
             std::string id, password, username;
-            int pri;
+            std::string pri;
             ss >> id >> password >> pri >> username;
+            int privilege;
+            try {
+                privilege = std::stoi(pri);
+            } catch (const std::invalid_argument& e) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
             if (check_rest(ss)) { continue;}
-            if (!User::useradd(id, password, username, pri, c_privileges.top(), c_users.top())) {
+            if (!User::useradd(id, password, username, privilege, c_privileges.top(), c_users.top())) {
                 std::cout << "Invalid" << std::endl;
                 continue;
             }
