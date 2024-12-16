@@ -31,6 +31,7 @@ bool loggedin(std::stack<std::string> stack, const std::string& element) {
 }
 
 int check_price(const std::string &price) {
+    if (price.find_first_not_of("0123456789.") != std::string::npos) return -1;
     if (price.length() > 13) return -1;
     if (price == "") return -1;
     std::istringstream iss(price);
