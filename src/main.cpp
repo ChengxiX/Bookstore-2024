@@ -460,6 +460,9 @@ int main() {
                     else if (dot == 0) {
                         price *= 100;
                     }
+                    if (price <= 0) {
+                        goto invalid;
+                    }
                 }
                 else {
                     goto invalid;
@@ -549,6 +552,10 @@ int main() {
             }
             else if (dot == 0) {
                 price *= 100;
+            }
+            if (price <= 0) {
+                std::cout << "Invalid" << std::endl;
+                continue;
             }
             Book::Price_T res = Deal::import(c_users.top(), c_selected_books.top(), std::stoi(quantity), price, c_privileges.top());
             if (res == -1) {
