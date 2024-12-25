@@ -42,6 +42,9 @@ int check_price(const std::string &price) {
         return -1;
     }
     std::string::size_type dot_pos = price.find('.');
+    if (dot_pos == 0) {
+        return -1;
+    }
     if (dot_pos == std::string::npos) {
         return 0;
     }
