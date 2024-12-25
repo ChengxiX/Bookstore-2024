@@ -1,5 +1,6 @@
 #include "operations.cpp"
 #include "models.hpp"
+#include <exception>
 #include <ostream>
 #include <stack>
 #include <iostream>
@@ -183,7 +184,17 @@ int main() {
                         std::cout << "Invalid" << std::endl;
                         continue;
                     }
-                    c = std::stoi(count);
+                    try {
+                        c = std::stoi(count);
+                    }
+                    catch (const std::invalid_argument& e) {
+                        std::cout << "Invalid" << std::endl;
+                        continue;
+                    }
+                    catch (const std::out_of_range& e) {
+                        throw std::runtime_error("Required finance count out of range");
+                        continue;
+                    }
                 }
                 if (c == 0) {
                     std::cout << std::endl; // 空行
@@ -470,7 +481,18 @@ int main() {
                 std::cout << "Invalid" << std::endl;
                 continue;
             }
-            int q = std::stoi(quantity);
+            int q;
+            try {
+                q = std::stoi(quantity);
+            }
+            catch (const std::invalid_argument& e) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            catch (const std::out_of_range& e) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }   
             if (q <= 0) {
                 std::cout << "Invalid" << std::endl;
                 continue;
@@ -497,7 +519,17 @@ int main() {
                 std::cout << "Invalid" << std::endl;
                 continue;
             }
-            if (std::stoi(quantity) <= 0) {
+            try {
+                if (std::stoi(quantity) <= 0) {
+                    std::cout << "Invalid" << std::endl;
+                    continue;
+                }
+            }
+            catch (const std::invalid_argument& e) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
+            catch (const std::out_of_range& e) {
                 std::cout << "Invalid" << std::endl;
                 continue;
             }

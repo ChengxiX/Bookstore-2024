@@ -82,6 +82,7 @@ bool User::useradd(const std::string &id, const std::string &password, const std
 bool User::passwd(const std::string &id, const std::string &new_password, const std::string & staff, int privilege, const std::string &old_password) {
     if (!check_id(id)) return false;
     if (!check_str(new_password)) return false;
+    if ((!check_str(old_password)) && old_password != "") return false;
     if (!check_pri(privilege)) return false;
     if (privilege < 1) return false;
     if (privilege == 7) {
