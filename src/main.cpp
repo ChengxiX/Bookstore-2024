@@ -208,7 +208,7 @@ int main() {
                     std::cout << "Invalid" << std::endl;
                     continue;
                 }
-                std::cout << "+ " << std::fixed << std::setprecision(2) << double(res.first) / 100 << " - " << double(res.second) / 100 << std::endl;
+                std::cout << "+ " << std::fixed << std::setprecision(2) << double(res.first) / 100 << " - "<< std::setprecision(2) << double(res.second) / 100 << std::endl;
                 continue;
             }
             if (type[0] != '-') {
@@ -564,10 +564,24 @@ int main() {
             }
         }
         else if (op == "report") {
-
+            std::string type;
+            ss >> type;
+            if (type == "finance") {
+                check_rest(ss);
+                Deal::report_finance(c_privileges.top(), c_users.top(), std::cout);
+            }
+            else if (type == "employee") {
+                check_rest(ss);
+                Log::report_employee(c_privileges.top(), c_users.top(), std::cout);
+            }
+            else {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            }
         }
         else if (op == "log") {
-
+            check_rest(ss);
+            Log::getlog(c_privileges.top(), c_users.top(), std::cout);
         }
         else if (op == "") {}
         else {

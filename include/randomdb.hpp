@@ -101,10 +101,10 @@ public:
         head_river.flush();
         body_river.flush();
     }
+    head_index head_begin = -1;
 private:
     MemoryRiver<head, 16> head_river;
     BlockRiver<array, block_size> body_river;
-    head_index head_begin = -1;
     head_index head_end = -1;
     head_index db_id;
     bool duplicate_allowed;

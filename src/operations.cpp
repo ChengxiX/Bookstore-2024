@@ -2,7 +2,9 @@
 #define _operations_
 
 #include "models.hpp"
+#include <ostream>
 #include <string>
+#include <unordered_map>
 #include <utility>
 
 bool User::check_id(const std::string &id) {
@@ -349,58 +351,136 @@ std::pair<Book::Price_T, Book::Price_T> Deal::show_finance(int count, const std:
     return std::make_pair(in, out);
 }
 
-void Deal::report_finance() {
+void Deal::report_finance(int privilege, const std::string &userId, std::ostream& outstream) {
+    if (privilege != 7) {
+        outstream << "Invalid" << std::endl;
+        return;
+    }
+    std::unordered_map<int, Book::BookInfo> books;
+    auto list = db.range(0, db.size());
+    int id = 0;
+    Book::Price_T in = 0, out = 0;
+    for (auto &deal : list) {
+        auto book = Book::db[deal.quantity];
+        books[deal.quantity] = book;
+        if (deal.type == DealType::Sale) {
+            outstream << std::left
+                << std::setw(10) << id
+                << std::setw(6)  << "Sale"
+                << std::setw(21) << book.ISBN
+                << std::setw(21) << book.Title
+                << std::setw(21) << book.Author
+                << std::setw(10) << double(deal.price) / 100
+                << deal.quantity << std::endl;
+            in += deal.price * deal.quantity;
+        }
+        else {
+            outstream << std::left
+                << std::setw(10) << id
+                << std::setw(6)  << "Import"
+                << std::setw(21) << book.ISBN
+                << std::setw(21) << book.Title
+                << std::setw(21) << book.Author
+                << std::setw(10) << double(deal.price) / 100
+                << deal.quantity << std::endl;
+            out += deal.price;
+        }
+        id++;
+    }
+    outstream << "+ " << std::fixed << std::setprecision(2) << double(in) / 100 << " - " << std::setprecision(2) << double(out) / 100 << std::endl;
 }
 
 // namespace Log {
 void Log::login(const std::string &id) {
     db.push_back(LogInfo{db.size(), OpType::UserLogin, id, -1, std::string("login")});
+    index_db.insert(id, db.size() - 1);
 }
 
 void Log::logout(const std::string &id) {
     db.push_back(LogInfo{db.size(), OpType::UserLogout, id, -1, std::string("logout")});
+    index_db.insert(id, db.size() - 1);
 }
 
 void Log::useradd(const std::string &userId, const std::string &info) {
     db.push_back(LogInfo{db.size(), OpType::UserAdd, userId, -1, info});
+    index_db.insert(userId, db.size() - 1);
 }
 
 void Log::userdelete(const std::string &userId, const std::string &info) {
     db.push_back(LogInfo{db.size(), OpType::UserDelete, userId, -1, info});
+    index_db.insert(userId, db.size() - 1);
 }
 
 void Log::userpw(const std::string &userId, const std::string &info) {
     db.push_back(LogInfo{db.size(), OpType::UserPW, userId, -1, info});
+    index_db.insert(userId, db.size() - 1);
 }
 
 void Log::showbook(const std::string &userId, const std::string &info, int book_id) {
     db.push_back(LogInfo{db.size(), OpType::BookAdd, userId, book_id, info});
+    index_db.insert(userId, db.size() - 1);
 }
 
 void Log::bookadd(const std::string &userId, int book_id, const std::string &info) {
     db.push_back(LogInfo{db.size(), OpType::BookAdd, userId, book_id, info});
+    index_db.insert(userId, db.size() - 1);
 }
 
 void Log::bookmodify(const std::string &userId, int book_id, const std::string &info) {
     db.push_back(LogInfo{db.size(), OpType::BookModify, userId, book_id, info});
+    index_db.insert(userId, db.size() - 1);
 }
 
 void Log::dealimport(const std::string &userId, int deal_id, const std::string &info) {
     db.push_back(LogInfo{db.size(), OpType::DealImport, userId, deal_id, info});
+    index_db.insert(userId, db.size() - 1);
 }
 
 void Log::dealsale(const std::string &userId, int deal_id, const std::string &info) {
     db.push_back(LogInfo{db.size(), OpType::DealSale, userId, deal_id, info});
+    index_db.insert(userId, db.size() - 1);
 }
 
 void Log::showfinance(const std::string &userId, const std::string &info) {
     db.push_back(LogInfo{db.size(), OpType::ShowFinance, userId, -1, info});
+    index_db.insert(userId, db.size() - 1);
 }
 
-void Log::report_employee() {
+void Log::report_employee(int privilege, const std::string &userId, std::ostream & outstream) {
+    db.push_back(LogInfo{db.size(), OpType::AccessLog, userId, -1, std::string("report employee")});
+    index_db.insert(userId, db.size() - 1);
+    if (privilege != 7) {
+        outstream << "Invalid" << std::endl;
+        return;
+    }
+    char l[2] = {127, '\0'};
+    auto all = User::db.range(User::db.head_begin, 0, -1, 0);
+    std::set<User::UserId, textcmp<User::max_str_len>> users;
+    for (auto &user : all) {
+        if (user.second.Privilege >= 3) {
+            users.insert(user.first);
+        }
+    }
+    for (auto &user : users) {
+        outstream << "  " << user << std::endl;
+        for (auto &log_id : index_db.find(user)) {
+            auto log = db[log_id.second];
+            outstream << log_id.second << " " << log.type << ":" << log.info << std::endl; 
+        }
+        outstream << std::endl;
+    }
 }
 
-void Log::getlog() {
+void Log::getlog(int privilege, const std::string &userId, std::ostream & outstream) {
+    db.push_back(LogInfo{db.size(), OpType::AccessLog, userId, -1, std::string("get log")});
+    index_db.insert(userId, db.size() - 1);
+    if (privilege != 7) {
+        outstream << "Invalid" << std::endl;
+        return;
+    }
+    for (auto &log : db.range(0, db.size())) {
+        outstream << log.id << " " << log.type << ":" << log.info << std::endl;
+    }
 }
 
 

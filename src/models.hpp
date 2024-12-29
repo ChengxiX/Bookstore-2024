@@ -7,6 +7,7 @@
 #include "kvdb.cpp"
 #include "seqdb.hpp"
 #include <array>
+#include <ostream>
 #include <string>
 #include <vector>
 #include <set>
@@ -30,7 +31,7 @@ struct binstring {
     //         str[i] = s[i];
     //         if (s[i] == 0) break;
     //     }
-    // }
+    //
     binstring(const binstring<max> &a) {
         std::strcpy(str.begin(), a.str.begin());
     }
@@ -206,7 +207,7 @@ namespace Deal {
     Book::Price_T buy(const std::string & user, const std::string &isbn, int quantity, int privilege);
     Book::Price_T import(const std::string & user, int book_id, int quantity, Book::Price_T total_cost, int privilege);
     std::pair<Book::Price_T, Book::Price_T> show_finance(int count = -1, const std::string &staff = "", int privilege = 0);
-    void report_finance();  // 不一定是void，待定
+    void report_finance(int, const std::string &userId, std::ostream&);  // 不一定是void，待定
 }
 
 namespace Log {
@@ -221,7 +222,8 @@ namespace Log {
         BookModify,
         DealImport,
         DealSale,
-        ShowFinance
+        ShowFinance,
+        AccessLog
     };
     struct LogInfo {
         int id;
@@ -261,8 +263,8 @@ namespace Log {
     };
     SeqDB<LogInfo> db("log", INSTANCE_ID, "");
     KVDB<int, std::less<int>, User::max_str_len> index_db("op2log", INSTANCE_ID, "", false);
-    void report_employee(); // 不一定是void，待定
-    void getlog(); // 不一定是void，待定
+    void report_employee(int, const std::string &userId, std::ostream & outstream);
+    void getlog(int, const std::string &userId, std::ostream & outstream);
     void login(const std::string & userId);
     void logout(const std::string & userId);
     void useradd(const std::string & userId, const std::string & info);
