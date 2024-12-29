@@ -169,9 +169,9 @@ int main() {
                     std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
                     std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
                 }
-                if (all.empty()) {
-                    std::cout << std::endl;
-                }
+                // if (all.empty()) {
+                //     std::cout << std::endl;
+                // }
                 continue;
             }
             else if (type == "finance") {
@@ -195,7 +195,7 @@ int main() {
                         continue;
                     }
                     catch (const std::out_of_range& e) {
-                        throw std::runtime_error("Required finance count out of range");
+                        std::cout << "Invalid" << std::endl;
                         continue;
                     }
                 }
@@ -232,9 +232,9 @@ int main() {
                     std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
                     std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
                 }
-                if (res.second.empty()) {
-                    std::cout << std::endl;
-                }
+                // if (res.second.empty()) {
+                //     std::cout << std::endl;
+                // }
             }
             else if (type.substr(0, eq) == "-name") {
                 std::string title;
@@ -271,9 +271,9 @@ int main() {
                     std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
                     std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
                 }
-                if (res.second.empty()) {
-                    std::cout << std::endl;
-                }
+                // if (res.second.empty()) {
+                //     std::cout << std::endl;
+                // }
             }
             else if (type.substr(0, eq) == "-author") {
                 if (type[eq + 1] != '\"') {
@@ -310,9 +310,9 @@ int main() {
                     std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
                     std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
                 }
-                if (res.second.empty()) {
-                    std::cout << std::endl;
-                }
+                // if (res.second.empty()) {
+                //     std::cout << std::endl;
+                // }
             }
             else if (type.substr(0, eq) == "-keyword") {
                 if (check_rest(ss)) { continue;}
@@ -333,9 +333,9 @@ int main() {
                     std::cout << book.ISBN << "\t" << book.Title << "\t" << book.Author << "\t" << book.Keyword << "\t";
                     std::cout << std::fixed << std::setprecision(2) << double(book.price) / 100 << "\t" << book.Stock << std::endl;
                 }
-                if (res.second.empty()) {
-                    std::cout << std::endl;
-                }
+                // if (res.second.empty()) {
+                //     std::cout << std::endl;
+                // }
             }
             else {
                 invalid2 :;
