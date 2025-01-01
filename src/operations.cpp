@@ -49,7 +49,7 @@ int User::su(const std::string &id , const std::string &password, int privilege)
     if (!check_pri(privilege)) return -1;
     auto res = db.get(binstring<max_str_len>(id));
     if (! res.first) {return -1;}
-    if (privilege > res.second.second.Privilege) {
+    if (privilege > res.second.second.Privilege && password == "") {
         Log::login(id);
         return res.second.second.Privilege;
     }
