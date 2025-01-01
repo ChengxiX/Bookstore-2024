@@ -471,7 +471,7 @@ int main() {
                     else if (dot == 0) {
                         price *= 100;
                     }
-                    if (price < 0) {
+                    if (price <= 0) {
                         goto invalid;
                     }
                 }
@@ -564,7 +564,7 @@ int main() {
             else if (dot == 0) {
                 price *= 100;
             }
-            if (price < 0) {
+            if (price <= 0) {
                 std::cout << "Invalid" << std::endl;
                 continue;
             }
