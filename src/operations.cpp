@@ -88,7 +88,7 @@ bool User::passwd(const std::string &id, const std::string &new_password, const 
     if ((!check_str(old_password)) && old_password != "") return false;
     if (!check_pri(privilege)) return false;
     if (privilege < 1) return false;
-    if (privilege == 7) {
+    if (privilege == 7 && old_password == "") {
         auto res = db.get(binstring<max_str_len>(id));
         if (! res.first) {return false;}
         res.second.second.Password = binstring<max_str_len>(new_password);
