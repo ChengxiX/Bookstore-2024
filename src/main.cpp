@@ -81,7 +81,6 @@ int main() {
             break;
         }
         else if (op == "su") {
-            
             std::string id, password;
             ss >> id >> password;
             if (check_rest(ss)) { continue;}
@@ -132,6 +131,12 @@ int main() {
             try {
                 privilege = std::stoi(pri);
             } catch (const std::invalid_argument& e) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            } catch (const std::out_of_range& e) {
+                std::cout << "Invalid" << std::endl;
+                continue;
+            } catch (const std::exception& e) {
                 std::cout << "Invalid" << std::endl;
                 continue;
             }
