@@ -53,6 +53,9 @@ int User::su(const std::string &id , const std::string &password, int privilege)
         Log::login(id);
         return res.second.second.Privilege;
     }
+    if (password == "") {
+        return -1;
+    }
     if (std::strcmp(res.second.second.Password.c_str(), password.c_str()) == 0) {
         Log::login(id);
         return res.second.second.Privilege;
