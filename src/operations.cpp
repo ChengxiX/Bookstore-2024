@@ -9,7 +9,7 @@
 
 bool User::check_id(const std::string &id) {
     if (id == "") return false;
-    if (id == "guest") return false;
+    // if (id == "guest") return false;
     return check_str(id);
 }
 
