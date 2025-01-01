@@ -74,10 +74,7 @@ int main() {
         std::string op;
         ss >> op;
         if (op == "exit" || op == "quit") {
-            if (check_rest(ss)) {
-                std::cout << "Invalid" << std::endl;
-                continue;
-            }
+            if (check_rest(ss)) { continue; }
             break;
         }
         else if (op == "su") {
