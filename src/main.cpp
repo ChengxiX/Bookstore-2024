@@ -78,6 +78,7 @@ int main() {
             break;
         }
         else if (op == "su") {
+            throw -1;
             std::string id, password;
             ss >> id >> password;
             if (check_rest(ss)) { continue;}
@@ -93,6 +94,7 @@ int main() {
             }
         }
         else if (op == "logout") {
+            throw -1;
             if (check_rest(ss)) { continue;}
             if (c_users.size() > 1) {
                 Log::logout(c_users.top());
@@ -106,6 +108,7 @@ int main() {
             }
         }
         else if (op == "passwd") {
+            throw -1;
             std::string id, old_password, new_password;
             ss >> id >> old_password >> new_password;
             if (check_rest(ss)) { continue;}
@@ -136,6 +139,7 @@ int main() {
             }
         }
         else if (op == "register") {
+            throw -1;
             std::string id, password, username;
             ss >> id >> password >> username;
             if (check_rest(ss)) { continue;}
