@@ -579,11 +579,11 @@ int main() {
             std::string type;
             ss >> type;
             if (type == "finance") {
-                check_rest(ss);
+                if (check_rest(ss)) continue;
                 Deal::report_finance(c_privileges.top(), c_users.top(), std::cout);
             }
             else if (type == "employee") {
-                check_rest(ss);
+                if (check_rest(ss)) continue;
                 Log::report_employee(c_privileges.top(), c_users.top(), std::cout);
             }
             else {
@@ -592,7 +592,7 @@ int main() {
             }
         }
         else if (op == "log") {
-            check_rest(ss);
+            if (check_rest(ss)) continue;
             Log::getlog(c_privileges.top(), c_users.top(), std::cout);
         }
         else if (op == "") {}
