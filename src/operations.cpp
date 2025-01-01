@@ -65,11 +65,12 @@ bool User::useradd(const std::string &id, const std::string &password, const std
     if (!check_str(password)) return false;
     if (!check_name(username)) return false;
     if (!check_pri(privilege)) return false;
+    if (privilege == 0) return false;
     if (current_pri != 2) {
         if (current_pri < 3) return false;
     }
     if (privilege >= current_pri) return false;
-    std::pair<binstring<max_str_len>, UserInfo> p(id, UserInfo{id, binstring<max_str_len>(username),
+    std::pair<binstring<max_str_len>, UserInfo> p(id, UserInfo{binstring<max_str_len>(id), binstring<max_str_len>(username),
     binstring<max_str_len>(password), privilege});
     try {
         db.insert(p);
