@@ -471,7 +471,7 @@ int main() {
                     else if (dot == 0) {
                         price *= 100;
                     }
-                    if (price <= 0) {
+                    if (price < 0) {
                         goto invalid;
                     }
                 }
