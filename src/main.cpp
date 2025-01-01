@@ -74,9 +74,7 @@ int main() {
         std::string op;
         ss >> op;
         if (op == "exit" || op == "quit") {
-            if (check_rest(ss)) { 
-                std::cout << "Invalid" << std::endl;
-                continue; }
+            if (check_rest(ss)) { continue; }
             break;
         }
         else if (op == "su") {
@@ -578,11 +576,11 @@ int main() {
             std::string type;
             ss >> type;
             if (type == "finance") {
-                //if (check_rest(ss)) continue;
+                if (check_rest(ss)) continue;
                 Deal::report_finance(c_privileges.top(), c_users.top(), std::cout);
             }
             else if (type == "employee") {
-                //if (check_rest(ss)) continue;
+                if (check_rest(ss)) continue;
                 Log::report_employee(c_privileges.top(), c_users.top(), std::cout);
             }
             else {
@@ -591,7 +589,7 @@ int main() {
             }
         }
         else if (op == "log") {
-            //if (check_rest(ss)) continue;
+            if (check_rest(ss)) continue;
             Log::getlog(c_privileges.top(), c_users.top(), std::cout);
         }
         else if (op == "") {}
